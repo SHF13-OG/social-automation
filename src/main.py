@@ -309,6 +309,146 @@ def report(
     total_posts = len(df)
     console.print(f"[bold]Total posts in DB:[/bold] {total_posts}")
 
+def _markdown_escape(s: str) -> str:
+    return s.replace("|", r"\|").replace("\n", " ").strip()
+
+
+def _df_to_markdown_table(df: pd.DataFrame, columns: list[str]) -> str:
+    if df.empty:
+        return "_No rows to display._\n"
+
+    header = "| " + " | ".join(columns) + " |"
+    sep = "| " + " | ".join(["---"] * len(columns)) + " |"
+
+    rows = []
+    for _, r in df.iterrows():
+        vals = []
+        for c in columns:
+            v = r.get(c, "")
+            if pd.isna(v):
+                v = ""
+            if isinstance(v, float):
+                vals.append(f"{v:.4f}" if c == "engagement_rate" else f"{v:.2f}")
+            else:
+                vals.append(_markdown_escape(str(v)))
+        rows.append("| " + " | ".join(vals) + " |")
+
+    return "\n".join([header, sep] + rows) + "\n"
+
+
+@app.command()
+def export(
+    out: str = typer.Option(..., "--out", help="Output markdown path, e.g. reports/latest.md"),
+    last_days: int = typer.Option(7, help="Report window size in days"),
+    top_n: int = typer.Option(5, help="How many top posts to include"),
+) -> None:
+    """Export the performance report to a markdown file."""
+    db_path = get_db_path()
+    conn = connect(db_path)
+    init_db(conn)
+
+    try:
+        df = load_posts(conn)
+    finally:
+        conn.close()
+
+    total_posts = len(df)
+    now = datetime.now(timezone.utc)
+
+    if total_posts == 0:
+        md = "\n".join(
+            [
+                "# TikTok Report",
+                f"Generated: {now.isoformat()}",
+                f"DB_PATH: `{db_path}`",
+                "",
+                "No data yet. Import your CSV first:",
+                "",
+                "```bash",
+                "python -m src.main import data/tiktok_posts.csv",
+                "```",
+                "",
+            ]
+        )
+    else:
+        cutoff = now - timedelta(days=last_days)
+        recent = df[df["created_at_dt"].notna() & (df["created_at_dt"] >= cutoff)].copy()
+
+        def summarize(frame: pd.DataFrame) -> dict[str, float]:
+            if frame.empty:
+                return {
+                    "posts": 0,
+                    "total_views": 0,
+                    "total_engagement": 0,
+                    "avg_views": 0,
+                    "median_views": 0,
+                    "avg_engagement_rate": 0,
+                }
+            return {
+                "posts": float(len(frame)),
+                "total_views": float(frame["views"].sum()),
+                "total_engagement": float(frame["engagement"].sum()),
+                "avg_views": float(frame["views"].mean()),
+                "median_views": float(frame["views"].median()),
+                "avg_engagement_rate": float(frame["engagement_rate"].mean()) * 100.0,
+            }
+
+        s_all = summarize(df)
+        s_recent = summarize(recent)
+
+        def top_posts(frame: pd.DataFrame) -> pd.DataFrame:
+            if frame.empty:
+                return frame
+            out_df = frame.sort_values("views", ascending=False).head(top_n).copy()
+            out_df["engagement_rate"] = out_df["engagement_rate"].apply(lambda x: x * 100.0)
+            out_df["caption"] = out_df["caption"].fillna("").astype(str).str.slice(0, 80)
+            return out_df[
+                ["post_id", "created_at", "views", "engagement", "engagement_rate", "caption", "url"]
+            ]
+
+        top_df = top_posts(recent if len(recent) else df)
+
+        md_lines = [
+            "# TikTok Report",
+            f"Generated: {now.isoformat()}",
+            f"DB_PATH: `{db_path}`",
+            "",
+            "## Summary",
+            f"- Total posts in DB: {total_posts}",
+            "",
+            "### All time",
+            f"- Posts: {int(s_all['posts'])}",
+            f"- Total views: {int(s_all['total_views'])}",
+            f"- Total engagement: {int(s_all['total_engagement'])}",
+            f"- Avg views: {s_all['avg_views']:.1f}",
+            f"- Median views: {s_all['median_views']:.1f}",
+            f"- Avg engagement rate: {s_all['avg_engagement_rate']:.2f}%",
+            "",
+            f"### Last {last_days} days",
+            f"- Posts: {int(s_recent['posts'])}",
+            f"- Total views: {int(s_recent['total_views'])}",
+            f"- Total engagement: {int(s_recent['total_engagement'])}",
+            f"- Avg views: {s_recent['avg_views']:.1f}",
+            f"- Median views: {s_recent['median_views']:.1f}",
+            f"- Avg engagement rate: {s_recent['avg_engagement_rate']:.2f}%",
+            "",
+            "## Top posts by views",
+            _df_to_markdown_table(
+                top_df,
+                ["post_id", "created_at", "views", "engagement", "engagement_rate", "caption", "url"],
+            ),
+        ]
+
+        md = "\n".join(md_lines)
+
+    out_path = os.path.abspath(out)
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(md)
+
+    console.print(f"[bold]Wrote report:[/bold] {out_path}")
+
+
     if total_posts == 0:
         console.print("[yellow]No data yet.[/yellow] Import your CSV first.")
         console.print("Example: python -m src.main import data/tiktok_posts.csv")
