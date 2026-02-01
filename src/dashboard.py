@@ -2,13 +2,19 @@ from __future__ import annotations
 
 import os
 import sqlite3
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 import streamlit as st
 
-
 DEFAULT_DB_PATH = "data/social.db"
+LOCAL_TZ = ZoneInfo("America/Chicago")
+
+# Bump this key if Streamlit ever caches a bad range again
+DATE_RANGE_KEY = "date_range_central_v2"
+MIN_VIEWS_KEY = "min_views"
+CAPTION_KEY = "caption_search"
 
 
 def get_db_path() -> str:
@@ -43,16 +49,19 @@ def load_posts(db_path: str) -> pd.DataFrame:
     if df.empty:
         return df
 
+    # Parse timestamps as UTC, then convert for display and filtering
     df["created_at_dt"] = pd.to_datetime(df["created_at"], errors="coerce", utc=True)
+    df["created_at_local"] = df["created_at_dt"].dt.tz_convert(LOCAL_TZ)
 
     for col in ["views", "likes", "comments", "shares", "favorites"]:
-        if col in df.columns:
-            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
+        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0).astype(int)
 
     df["engagement"] = df["likes"] + df["comments"] + df["shares"]
-    df["engagement_rate"] = df.apply(
-        lambda x: (x["engagement"] / x["views"]) if x["views"] > 0 else 0.0, axis=1
-    )
+
+    # Avoid divide-by-zero
+    views_nonzero = df["views"].replace({0: pd.NA})
+    df["engagement_rate"] = (df["engagement"] / views_nonzero).fillna(0.0)
+
     return df
 
 
@@ -71,48 +80,97 @@ st.sidebar.code(db_path)
 df = load_posts(db_path)
 
 if df.empty:
-    st.warning("No data found. Run `python -m src.main doctor` and `python -m src.main import data/tiktok_posts.csv` first.")
+    st.warning(
+        "No data found. Run `python -m src.main doctor` and `python -m src.main import data/tiktok_posts.csv` first."
+    )
     st.stop()
 
-# Sidebar filters
+# Filters
 st.sidebar.header("Filters")
 
-now = datetime.now(timezone.utc)
-default_start = now - timedelta(days=30)
+min_ts = df["created_at_local"].dropna().min()
+max_ts = df["created_at_local"].dropna().max()
 
-min_date = df["created_at_dt"].dropna().min()
-max_date = df["created_at_dt"].dropna().max()
-
-if pd.isna(min_date) or pd.isna(max_date):
+if pd.isna(min_ts) or pd.isna(max_ts):
     st.warning("No parsable created_at dates found in DB.")
     st.stop()
 
-start_date, end_date = st.sidebar.date_input(
-    "Date range (UTC)",
-    value=(max(default_start.date(), min_date.date()), max_date.date()),
-    min_value=min_date.date(),
-    max_value=max_date.date(),
+min_d = min_ts.date()
+max_d = max_ts.date()
+
+# Default to last 30 days of AVAILABLE data (based on max date in DB)
+suggested_start = (max_ts.to_pydatetime() - timedelta(days=30)).date()
+start_default = max(min_d, suggested_start)
+end_default = max_d
+
+# Safety clamp
+if start_default > end_default:
+    start_default = end_default
+
+# IMPORTANT: Streamlit can keep an old, bad range in session state.
+# If it's invalid or reversed, force-reset it BEFORE rendering the widget.
+if DATE_RANGE_KEY in st.session_state:
+    v = st.session_state[DATE_RANGE_KEY]
+    if isinstance(v, (tuple, list)) and len(v) == 2:
+        s, e = v
+    else:
+        s = e = v
+
+    invalid = (
+        s is None
+        or e is None
+        or not (min_d <= s <= max_d)
+        or not (min_d <= e <= max_d)
+        or s > e
+    )
+    if invalid:
+        st.session_state[DATE_RANGE_KEY] = (start_default, end_default)
+
+date_range = st.sidebar.date_input(
+    "Date range (Central Time)",
+    value=(start_default, end_default),
+    min_value=min_d,
+    max_value=max_d,
+    key=DATE_RANGE_KEY,
 )
 
-min_views = st.sidebar.number_input("Min views", min_value=0, value=0, step=100)
-caption_search = st.sidebar.text_input("Caption contains", value="").strip()
+if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
+    start_date, end_date = date_range
+else:
+    start_date = end_date = date_range
 
-filtered = df.copy()
-filtered = filtered[filtered["created_at_dt"].notna()]
+if start_date > end_date:
+    start_date, end_date = end_date, start_date
+
+min_views = st.sidebar.number_input(
+    "Min views", min_value=0, value=0, step=100, key=MIN_VIEWS_KEY
+)
+caption_search = st.sidebar.text_input(
+    "Caption contains", value="", key=CAPTION_KEY
+).strip()
+
+filtered = df[df["created_at_local"].notna()].copy()
 filtered = filtered[
-    (filtered["created_at_dt"].dt.date >= start_date) & (filtered["created_at_dt"].dt.date <= end_date)
+    (filtered["created_at_local"].dt.date >= start_date)
+    & (filtered["created_at_local"].dt.date <= end_date)
 ]
 filtered = filtered[filtered["views"] >= int(min_views)]
 
 if caption_search:
-    filtered = filtered[filtered["caption"].fillna("").str.contains(caption_search, case=False, na=False)]
+    filtered = filtered[
+        filtered["caption"].fillna("").str.contains(caption_search, case=False, na=False)
+    ]
+
+if filtered.empty:
+    st.warning("No posts match the current filters. Widen the date range or reduce min views.")
+    st.stop()
 
 # KPI summary
 total_posts = len(filtered)
-total_views = int(filtered["views"].sum()) if total_posts else 0
-total_eng = int(filtered["engagement"].sum()) if total_posts else 0
-avg_er = float(filtered["engagement_rate"].mean()) * 100.0 if total_posts else 0.0
-median_views = float(filtered["views"].median()) if total_posts else 0.0
+total_views = int(filtered["views"].sum())
+total_eng = int(filtered["engagement"].sum())
+avg_er = float(filtered["engagement_rate"].mean()) * 100.0
+median_views = float(filtered["views"].median())
 
 c1, c2, c3, c4, c5 = st.columns(5)
 c1.metric("Posts", fmt_int(total_posts))
@@ -127,38 +185,56 @@ st.divider()
 left, right = st.columns(2)
 
 with left:
-    st.subheader("Views over time")
+    st.subheader("Views over time (Central Time)")
     chart_df = filtered.copy()
-    chart_df["day"] = chart_df["created_at_dt"].dt.date
-    by_day = chart_df.groupby("day", as_index=False)["views"].sum()
-    st.line_chart(by_day, x="day", y="views")
+    chart_df["day"] = chart_df["created_at_local"].dt.date
+    by_day_views = chart_df.groupby("day", as_index=False)["views"].sum()
+    st.line_chart(by_day_views, x="day", y="views")
 
 with right:
-    st.subheader("Engagement rate over time (avg per day)")
+    st.subheader("Engagement rate over time (avg per day, Central Time)")
     chart_df = filtered.copy()
-    chart_df["day"] = chart_df["created_at_dt"].dt.date
-    by_day = chart_df.groupby("day", as_index=False)["engagement_rate"].mean()
-    by_day["engagement_rate_pct"] = by_day["engagement_rate"] * 100.0
-    st.line_chart(by_day, x="day", y="engagement_rate_pct")
+    chart_df["day"] = chart_df["created_at_local"].dt.date
+    by_day_er = chart_df.groupby("day", as_index=False)["engagement_rate"].mean()
+    by_day_er["engagement_rate_pct"] = by_day_er["engagement_rate"] * 100.0
+    st.line_chart(by_day_er, x="day", y="engagement_rate_pct")
 
 st.divider()
 
 # Table
 st.subheader("Posts")
 show = filtered.sort_values("views", ascending=False).copy()
+show["created_at_central"] = show["created_at_local"].dt.strftime("%Y-%m-%d %H:%M")
 show["engagement_rate_pct"] = (show["engagement_rate"] * 100.0).round(2)
+
 show = show[
-    ["post_id", "created_at", "views", "likes", "comments", "shares", "engagement", "engagement_rate_pct", "caption", "url"]
+    [
+        "post_id",
+        "created_at_central",
+        "views",
+        "likes",
+        "comments",
+        "shares",
+        "engagement",
+        "engagement_rate_pct",
+        "caption",
+        "url",
+    ]
 ]
-st.dataframe(show, use_container_width=True, hide_index=True)
+st.dataframe(show, width="stretch", hide_index=True)
 
 # Recommendations
 st.subheader("Recommendations (simple heuristics)")
-recs = []
+recs: list[str] = []
+
 if avg_er < 2.0:
-    recs.append("Engagement rate is low. Tighten the first 1-2 seconds, reduce on-screen text, and make the payoff clearer.")
+    recs.append(
+        "Engagement rate is low. Tighten the first 1-2 seconds, reduce on-screen text, and make the payoff clearer."
+    )
 if median_views < 500:
-    recs.append("Median views are low. Run a 7-day posting experiment and test two posting times (morning vs evening).")
+    recs.append(
+        "Median views are low. Run a 7-day posting experiment and test two posting times (morning vs evening)."
+    )
 if int(filtered["shares"].sum()) == 0:
     recs.append("Zero shares in this window. Try a direct prompt: 'Send this to someone who needs it.'")
 if total_posts < 5:
@@ -169,4 +245,3 @@ if recs:
         st.write(f"- {r}")
 else:
     st.write("- Nothing obvious. Keep posting and iterate.")
-
