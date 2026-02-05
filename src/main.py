@@ -920,5 +920,162 @@ def compose_cmd(
     conn.close()
 
 
+# ---------------------------------------------------------------------------
+# Phase 4 commands: publishing
+# ---------------------------------------------------------------------------
+
+@app.command("schedule")
+def schedule_cmd(
+    video_id: int = typer.Argument(..., help="ID of the generated video."),
+    at: str = typer.Argument(
+        ..., help="Scheduled datetime (ISO 8601, e.g. 2025-02-10T07:00:00)."
+    ),
+    platform: str = typer.Option("tiktok", help="Target platform."),
+) -> None:
+    """Add a video to the publish queue at a given time."""
+    from src.db import connect as db_connect, init_schema
+    from src.publishing.scheduler import add_to_queue, needs_human_approval
+
+    db_path = get_db_path()
+    conn = db_connect(db_path)
+    init_schema(conn)
+
+    # Verify video exists
+    video = conn.execute(
+        "SELECT id, file_path FROM generated_videos WHERE id = ?", (video_id,)
+    ).fetchone()
+    if not video:
+        conn.close()
+        console.print(f"[red]Video id={video_id} not found.[/red]")
+        raise typer.Exit(code=1)
+
+    queue_id = add_to_queue(conn, video_id, at, platform)
+    console.print(f"[bold]Scheduled:[/bold] queue_id={queue_id}")
+    console.print(f"  Video: {video['file_path']}")
+    console.print(f"  Time: {at}")
+    console.print(f"  Platform: {platform}")
+
+    if needs_human_approval(conn):
+        console.print(
+            "\n[yellow]Note:[/yellow] This post requires human approval. "
+            "Run: python -m src.main approve " + str(queue_id)
+        )
+
+    conn.close()
+
+
+@app.command("approve")
+def approve_cmd(
+    queue_id: int = typer.Argument(..., help="Queue item ID to approve."),
+) -> None:
+    """Approve a pending queue item for publishing."""
+    from src.db import connect as db_connect, init_schema
+    from src.publishing.scheduler import approve_item
+
+    db_path = get_db_path()
+    conn = db_connect(db_path)
+    init_schema(conn)
+
+    if approve_item(conn, queue_id):
+        console.print(f"[bold]Approved:[/bold] queue_id={queue_id}")
+    else:
+        console.print(
+            f"[yellow]queue_id={queue_id} not found or not in 'pending' status.[/yellow]"
+        )
+
+    conn.close()
+
+
+@app.command("publish")
+def publish_cmd(
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Preview what would be published."
+    ),
+) -> None:
+    """Process the publish queue: upload due items to TikTok."""
+    from src.db import connect as db_connect, init_schema
+    from src.publishing.scheduler import process_queue
+
+    db_path = get_db_path()
+    conn = db_connect(db_path)
+    init_schema(conn)
+
+    results = process_queue(conn, db_path, dry_run=dry_run)
+
+    for r in results:
+        qid = r.get("queue_id", "-")
+        status = r["status"]
+        if status == "blocked":
+            console.print(f"[red]Blocked:[/red] {r['reason']}")
+        elif status == "empty":
+            console.print("[yellow]No due items in queue.[/yellow]")
+        elif status == "dry_run":
+            console.print(
+                f"  [dim]queue_id={qid}[/dim] would publish "
+                f"{r.get('video_path', '?')} ({r.get('verse_ref', '')})"
+            )
+        elif status == "published":
+            console.print(
+                f"  [green]Published[/green] queue_id={qid} "
+                f"(publish_id={r.get('publish_id', '?')})"
+            )
+        elif status == "failed":
+            console.print(
+                f"  [red]Failed[/red] queue_id={qid}: {r.get('reason', '?')}"
+            )
+        elif status == "skipped":
+            console.print(
+                f"  [yellow]Skipped[/yellow] queue_id={qid}: {r.get('reason', '?')}"
+            )
+
+    conn.close()
+
+
+@app.command("list-queue")
+def list_queue_cmd(
+    status: str = typer.Option(
+        None, "--status", "-s", help="Filter by status (pending, approved, published, failed)."
+    ),
+    limit: int = typer.Option(20, "--limit", "-n", help="Max rows to show."),
+) -> None:
+    """Show the publish queue."""
+    from src.db import connect as db_connect, init_schema
+    from src.publishing.scheduler import get_queue
+
+    db_path = get_db_path()
+    conn = db_connect(db_path)
+    init_schema(conn)
+
+    items = get_queue(conn, status=status, limit=limit)
+    conn.close()
+
+    if not items:
+        console.print("[yellow]Queue is empty.[/yellow]")
+        return
+
+    table = Table(title="Publish Queue")
+    table.add_column("id", justify="right")
+    table.add_column("video_id", justify="right")
+    table.add_column("platform")
+    table.add_column("scheduled_at")
+    table.add_column("status")
+    table.add_column("published_at")
+    table.add_column("error")
+
+    for item in items:
+        error = (item.get("error_message") or "")[:40]
+        table.add_row(
+            str(item["id"]),
+            str(item["video_id"]),
+            item.get("platform", ""),
+            item.get("scheduled_at", ""),
+            item.get("status", ""),
+            item.get("published_at", "") or "",
+            error,
+        )
+
+    console.print(table)
+
+
 if __name__ == "__main__":
     app()
