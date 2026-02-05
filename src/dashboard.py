@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 import sqlite3
+import subprocess
 from datetime import timedelta
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -148,6 +150,38 @@ min_views = st.sidebar.number_input(
 caption_search = st.sidebar.text_input(
     "Caption contains", value="", key=CAPTION_KEY
 ).strip()
+
+top_n = st.sidebar.number_input("Top N posts", min_value=1, value=10, step=1)
+
+st.sidebar.divider()
+st.sidebar.subheader("Export")
+
+if st.sidebar.button("Export report (Markdown)"):
+    reports_dir = Path("reports")
+    reports_dir.mkdir(parents=True, exist_ok=True)
+    out_path = reports_dir / "latest.md"
+
+    cmd = [
+        "python",
+        "-m",
+        "src.main",
+        "export",
+        "--out",
+        str(out_path),
+        "--last-days",
+        str((end_date - start_date).days + 1),
+        "--top-n",
+        str(int(top_n)),
+    ]
+
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, check=True)
+        st.sidebar.success(f"Wrote: {out_path}")
+        if res.stdout.strip():
+            st.sidebar.caption(res.stdout.strip())
+    except subprocess.CalledProcessError as e:
+        st.sidebar.error("Export failed. See details below.")
+        st.sidebar.code((e.stdout or "") + "\n" + (e.stderr or ""))
 
 filtered = df[df["created_at_local"].notna()].copy()
 filtered = filtered[
