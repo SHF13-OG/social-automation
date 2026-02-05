@@ -708,5 +708,92 @@ def import_verses_cmd(
         console.print(f"[yellow]Skipped:[/yellow] {skipped} (missing theme)")
 
 
+# ---------------------------------------------------------------------------
+# Phase 2 commands: content generation
+# ---------------------------------------------------------------------------
+
+@app.command("generate")
+def generate_cmd(
+    theme: str = typer.Option(
+        None, "--theme", "-t", help="Theme slug (e.g. grief). Auto-picks if omitted."
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Preview only; don't save to database."
+    ),
+    model: str = typer.Option(
+        "gpt-4o-mini", "--model", help="OpenAI model to use for prayer generation."
+    ),
+) -> None:
+    """Generate content: pick theme + verse, generate prayer text."""
+    from src.content.prayers import (
+        generate_prayer_text,
+        generate_prayer_text_fallback,
+        save_prayer,
+    )
+    from src.content.themes import pick_theme
+    from src.content.verses import mark_verse_used, pick_verse
+    from src.db import connect as db_connect, init_schema
+
+    db_path = get_db_path()
+    conn = db_connect(db_path)
+    init_schema(conn)
+
+    # 1. Pick theme
+    chosen_theme = pick_theme(conn, slug=theme)
+    if chosen_theme is None:
+        conn.close()
+        if theme:
+            console.print(f"[red]Theme '{theme}' not found or inactive.[/red]")
+        else:
+            console.print("[red]No active themes available.[/red]")
+        raise typer.Exit(code=1)
+
+    console.print(
+        f"[bold]Theme:[/bold] {chosen_theme['name']} ({chosen_theme['slug']})"
+    )
+
+    # 2. Pick verse
+    verse = pick_verse(conn, chosen_theme["id"])
+    if verse is None:
+        conn.close()
+        console.print(
+            f"[red]No verses found for theme '{chosen_theme['slug']}'.[/red] "
+            "Run: python -m src.main import-verses"
+        )
+        raise typer.Exit(code=1)
+
+    console.print(f"[bold]Verse:[/bold] {verse['reference']}")
+    console.print(f"  {verse['text']}")
+
+    # 3. Generate prayer
+    console.print("\n[bold]Generating prayer...[/bold]")
+    ai_model_used: str | None = None
+    try:
+        prayer_text = generate_prayer_text(verse, chosen_theme, model=model)
+        ai_model_used = model
+        console.print(f"  (via OpenAI {model})")
+    except RuntimeError as exc:
+        console.print(f"  [yellow]{exc}[/yellow]")
+        console.print("  Using template fallback.")
+        prayer_text = generate_prayer_text_fallback(verse, chosen_theme)
+        ai_model_used = "fallback-template"
+
+    word_count = len(prayer_text.split())
+    console.print(f"\n[bold]Prayer ({word_count} words):[/bold]")
+    console.print(prayer_text)
+
+    # 4. Save unless dry-run
+    if dry_run:
+        console.print("\n[yellow]--dry-run: nothing saved.[/yellow]")
+    else:
+        prayer_id = save_prayer(
+            conn, verse["id"], chosen_theme["id"], prayer_text, ai_model_used
+        )
+        mark_verse_used(conn, verse["id"])
+        console.print(f"\n[bold]Saved:[/bold] prayer_id={prayer_id}")
+
+    conn.close()
+
+
 if __name__ == "__main__":
     app()
