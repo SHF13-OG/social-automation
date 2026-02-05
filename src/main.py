@@ -795,5 +795,130 @@ def generate_cmd(
     conn.close()
 
 
+# ---------------------------------------------------------------------------
+# Phase 3 commands: media pipeline
+# ---------------------------------------------------------------------------
+
+@app.command("compose")
+def compose_cmd(
+    prayer_id: int = typer.Argument(..., help="ID of the prayer to compose into a video."),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Preview steps without generating media files."
+    ),
+) -> None:
+    """Generate audio, fetch footage, and compose a TikTok video for a prayer."""
+    from src.db import connect as db_connect, init_schema
+
+    db_path = get_db_path()
+    conn = db_connect(db_path)
+    init_schema(conn)
+
+    # 1. Load prayer + verse + theme
+    prayer_row = conn.execute(
+        "SELECT * FROM prayers WHERE id = ?", (prayer_id,)
+    ).fetchone()
+    if not prayer_row:
+        conn.close()
+        console.print(f"[red]Prayer id={prayer_id} not found.[/red]")
+        raise typer.Exit(code=1)
+
+    verse_row = conn.execute(
+        "SELECT * FROM bible_verses WHERE id = ?", (prayer_row["verse_id"],)
+    ).fetchone()
+    theme_row = conn.execute(
+        "SELECT * FROM themes WHERE id = ?", (prayer_row["theme_id"],)
+    ).fetchone()
+
+    console.print(f"[bold]Prayer:[/bold] id={prayer_id} ({prayer_row['word_count']} words)")
+    console.print(f"[bold]Verse:[/bold] {verse_row['reference']}")
+    console.print(f"[bold]Theme:[/bold] {theme_row['name']}")
+
+    if dry_run:
+        console.print("\n[bold]Steps that would run:[/bold]")
+        console.print("  1. Generate audio via ElevenLabs TTS")
+        console.print("  2. Search & download stock footage")
+        console.print("  3. Compose video with FFmpeg")
+        console.print("\n[yellow]--dry-run: no media generated.[/yellow]")
+        conn.close()
+        return
+
+    # 2. Generate audio
+    console.print("\n[bold]Step 1:[/bold] Generating audio...")
+    from src.media.tts import generate_audio, save_audio_record
+
+    try:
+        audio_info = generate_audio(prayer_id, prayer_row["prayer_text"], db_path)
+        audio_id = save_audio_record(conn, prayer_id, audio_info)
+        console.print(f"  Audio saved: {audio_info['file_path']}")
+    except RuntimeError as exc:
+        conn.close()
+        console.print(f"  [red]{exc}[/red]")
+        raise typer.Exit(code=1)
+
+    # 3. Fetch stock footage
+    console.print("\n[bold]Step 2:[/bold] Searching for stock footage...")
+    from src.media.footage import (
+        download_clip,
+        save_footage_record,
+        search_footage,
+    )
+
+    keywords = json.loads(theme_row["keywords"]) if theme_row["keywords"] else []
+    if not keywords:
+        keywords = [theme_row["name"]]
+
+    try:
+        clips = search_footage(keywords, db_path, max_results=2)
+    except RuntimeError as exc:
+        conn.close()
+        console.print(f"  [red]{exc}[/red]")
+        raise typer.Exit(code=1)
+
+    if not clips:
+        conn.close()
+        console.print("  [red]No footage found. Check API keys.[/red]")
+        raise typer.Exit(code=1)
+
+    footage_paths: list[str] = []
+    footage_ids: list[int] = []
+    for clip in clips:
+        dl_path = download_clip(clip, theme_row["slug"])
+        fid = save_footage_record(
+            conn, clip, str(dl_path), theme_row["id"], keywords
+        )
+        footage_paths.append(str(dl_path))
+        footage_ids.append(fid)
+        console.print(f"  Downloaded: {dl_path.name}")
+
+    # 4. Compose video
+    console.print("\n[bold]Step 3:[/bold] Composing video with FFmpeg...")
+    from src.media.compositor import compose_video, save_video_record
+
+    try:
+        video_info = compose_video(
+            audio_path=audio_info["file_path"],
+            footage_paths=footage_paths,
+            verse_ref=verse_row["reference"],
+            verse_text=verse_row["text"],
+            prayer_id=prayer_id,
+            db_path=db_path,
+        )
+        video_id = save_video_record(
+            conn, prayer_id, audio_id, footage_ids, video_info, db_path
+        )
+        console.print(f"  Video: {video_info['file_path']}")
+        console.print(f"  Duration: {video_info['duration_sec']:.1f}s")
+        console.print(
+            f"  Size: {video_info['file_size_bytes'] / 1024 / 1024:.1f} MB"
+        )
+        console.print(f"\n[bold]Done![/bold] video_id={video_id}")
+    except RuntimeError as exc:
+        conn.close()
+        console.print(f"  [red]{exc}[/red]")
+        raise typer.Exit(code=1)
+
+    conn.close()
+
+
 if __name__ == "__main__":
     app()
