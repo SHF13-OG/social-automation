@@ -6,7 +6,6 @@ import os
 import sqlite3
 from datetime import datetime, timezone
 
-
 DEFAULT_DB_PATH = "data/social.db"
 
 

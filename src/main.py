@@ -505,7 +505,8 @@ def export(
 @app.command("init-db")
 def init_db_cmd() -> None:
     """Initialize / migrate the full database schema (all tables)."""
-    from src.db import connect as db_connect, init_schema
+    from src.db import connect as db_connect
+    from src.db import init_schema
 
     db_path = get_db_path()
     conn = db_connect(db_path)
@@ -517,7 +518,7 @@ def init_db_cmd() -> None:
 @app.command("config-show")
 def config_show() -> None:
     """Display current configuration (YAML defaults + DB overrides)."""
-    from src.config import load_config, flatten_config
+    from src.config import flatten_config, load_config
 
     config = load_config()
     table = Table(title="Current Configuration")
@@ -533,7 +534,8 @@ def config_show() -> None:
 @app.command("list-themes")
 def list_themes() -> None:
     """List all available content themes from the database."""
-    from src.db import connect as db_connect, init_schema
+    from src.db import connect as db_connect
+    from src.db import init_schema
 
     db_path = get_db_path()
     conn = db_connect(db_path)
@@ -574,7 +576,8 @@ def init_themes_cmd(
     """Load themes from YAML into the database (upsert on slug)."""
     import yaml as _yaml
 
-    from src.db import connect as db_connect, init_schema, now_utc
+    from src.db import connect as db_connect
+    from src.db import init_schema, now_utc
 
     if not os.path.exists(yaml_path):
         raise typer.BadParameter(f"File not found: {yaml_path}")
@@ -633,7 +636,8 @@ def import_verses_cmd(
     """Import Bible verses from YAML into the database."""
     import yaml as _yaml
 
-    from src.db import connect as db_connect, init_schema, now_utc
+    from src.db import connect as db_connect
+    from src.db import init_schema, now_utc
 
     if not os.path.exists(yaml_path):
         raise typer.BadParameter(f"File not found: {yaml_path}")
@@ -732,7 +736,8 @@ def generate_cmd(
     )
     from src.content.themes import pick_theme
     from src.content.verses import mark_verse_used, pick_verse
-    from src.db import connect as db_connect, init_schema
+    from src.db import connect as db_connect
+    from src.db import init_schema
 
     db_path = get_db_path()
     conn = db_connect(db_path)
@@ -807,7 +812,8 @@ def compose_cmd(
     ),
 ) -> None:
     """Generate audio, fetch footage, and compose a TikTok video for a prayer."""
-    from src.db import connect as db_connect, init_schema
+    from src.db import connect as db_connect
+    from src.db import init_schema
 
     db_path = get_db_path()
     conn = db_connect(db_path)
@@ -933,7 +939,8 @@ def schedule_cmd(
     platform: str = typer.Option("tiktok", help="Target platform."),
 ) -> None:
     """Add a video to the publish queue at a given time."""
-    from src.db import connect as db_connect, init_schema
+    from src.db import connect as db_connect
+    from src.db import init_schema
     from src.publishing.scheduler import add_to_queue, needs_human_approval
 
     db_path = get_db_path()
@@ -969,7 +976,8 @@ def approve_cmd(
     queue_id: int = typer.Argument(..., help="Queue item ID to approve."),
 ) -> None:
     """Approve a pending queue item for publishing."""
-    from src.db import connect as db_connect, init_schema
+    from src.db import connect as db_connect
+    from src.db import init_schema
     from src.publishing.scheduler import approve_item
 
     db_path = get_db_path()
@@ -993,7 +1001,8 @@ def publish_cmd(
     ),
 ) -> None:
     """Process the publish queue: upload due items to TikTok."""
-    from src.db import connect as db_connect, init_schema
+    from src.db import connect as db_connect
+    from src.db import init_schema
     from src.publishing.scheduler import process_queue
 
     db_path = get_db_path()
@@ -1039,7 +1048,8 @@ def list_queue_cmd(
     limit: int = typer.Option(20, "--limit", "-n", help="Max rows to show."),
 ) -> None:
     """Show the publish queue."""
-    from src.db import connect as db_connect, init_schema
+    from src.db import connect as db_connect
+    from src.db import init_schema
     from src.publishing.scheduler import get_queue
 
     db_path = get_db_path()

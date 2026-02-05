@@ -1,0 +1,18 @@
+[project]
+name = "social-automation"
+version = "0.1.0"
+description = "Faith-based TikTok content automation for 45+ Christians"
+requires-python = ">=3.12"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests", "pages"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]  # line length handled by formatter
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

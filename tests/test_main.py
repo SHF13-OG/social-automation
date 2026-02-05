@@ -1,17 +1,15 @@
 import sqlite3
 
 import pandas as pd
-
 from src.main import (
+    init_db,
+    load_posts,
     normalize_columns,
     parse_datetime,
     row_to_post,
-    init_db,
     to_int,
     upsert_post,
-    load_posts,
 )
-
 
 # --- to_int tests ---
 

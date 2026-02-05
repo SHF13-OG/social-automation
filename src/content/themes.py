@@ -7,7 +7,6 @@ import sqlite3
 from typing import Any
 
 
-
 def get_active_themes(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     """Return all active themes as dicts."""
     cur = conn.execute(
