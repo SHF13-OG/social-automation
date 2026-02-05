@@ -1,0 +1,252 @@
+# Bible Verses Mapped to Themes
+# Translation: ESV (English Standard Version) unless noted
+# Each theme should have 10+ verses for rotation variety
+
+verses:
+  # --- Grief & Loss ---
+  - reference: "Psalm 23:4"
+    text: "Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me; your rod and your staff, they comfort me."
+    translation: "ESV"
+    theme: grief
+    tone: comforting
+
+  - reference: "Revelation 21:4"
+    text: "He will wipe away every tear from their eyes, and death shall be no more, neither shall there be mourning, nor crying, nor pain anymore, for the former things have passed away."
+    translation: "ESV"
+    theme: grief
+    tone: comforting
+
+  - reference: "Psalm 34:18"
+    text: "The Lord is near to the brokenhearted and saves the crushed in spirit."
+    translation: "ESV"
+    theme: grief
+    tone: comforting
+
+  - reference: "2 Corinthians 1:3-4"
+    text: "Blessed be the God and Father of our Lord Jesus Christ, the Father of mercies and God of all comfort, who comforts us in all our affliction."
+    translation: "ESV"
+    theme: grief
+    tone: comforting
+
+  - reference: "Matthew 5:4"
+    text: "Blessed are those who mourn, for they shall be comforted."
+    translation: "ESV"
+    theme: grief
+    tone: comforting
+
+  # --- Retirement & New Seasons ---
+  - reference: "Isaiah 46:4"
+    text: "Even to your old age I am he, and to gray hairs I will carry you. I have made, and I will bear; I will carry and will save."
+    translation: "ESV"
+    theme: retirement
+    tone: encouraging
+
+  - reference: "Jeremiah 29:11"
+    text: "For I know the plans I have for you, declares the Lord, plans for welfare and not for evil, to give you a future and a hope."
+    translation: "ESV"
+    theme: retirement
+    tone: encouraging
+
+  - reference: "Psalm 92:14"
+    text: "They still bear fruit in old age; they are ever full of sap and green."
+    translation: "ESV"
+    theme: retirement
+    tone: encouraging
+
+  - reference: "Ecclesiastes 3:1"
+    text: "For everything there is a season, and a time for every matter under heaven."
+    translation: "ESV"
+    theme: retirement
+    tone: encouraging
+
+  - reference: "Philippians 1:6"
+    text: "And I am sure of this, that he who began a good work in you will bring it to completion at the day of Jesus Christ."
+    translation: "ESV"
+    theme: retirement
+    tone: encouraging
+
+  # --- Health Challenges ---
+  - reference: "2 Corinthians 12:9"
+    text: "But he said to me, 'My grace is sufficient for you, for my power is made perfect in weakness.' Therefore I will boast all the more gladly of my weaknesses, so that the power of Christ may rest upon me."
+    translation: "ESV"
+    theme: health
+    tone: hopeful
+
+  - reference: "Isaiah 41:10"
+    text: "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand."
+    translation: "ESV"
+    theme: health
+    tone: hopeful
+
+  - reference: "Psalm 73:26"
+    text: "My flesh and my heart may fail, but God is the strength of my heart and my portion forever."
+    translation: "ESV"
+    theme: health
+    tone: hopeful
+
+  - reference: "James 5:14-15"
+    text: "Is anyone among you sick? Let him call for the elders of the church, and let them pray over him. And the prayer of faith will save the one who is sick, and the Lord will raise him up."
+    translation: "ESV"
+    theme: health
+    tone: hopeful
+
+  - reference: "Psalm 147:3"
+    text: "He heals the brokenhearted and binds up their wounds."
+    translation: "ESV"
+    theme: health
+    tone: hopeful
+
+  # --- Faith Questions & Doubts ---
+  - reference: "Mark 9:24"
+    text: "Immediately the father of the child cried out and said, 'I believe; help my unbelief!'"
+    translation: "ESV"
+    theme: faith-doubts
+    tone: reassuring
+
+  - reference: "Proverbs 3:5-6"
+    text: "Trust in the Lord with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths."
+    translation: "ESV"
+    theme: faith-doubts
+    tone: reassuring
+
+  - reference: "Hebrews 11:1"
+    text: "Now faith is the assurance of things hoped for, the conviction of things not seen."
+    translation: "ESV"
+    theme: faith-doubts
+    tone: reassuring
+
+  - reference: "Romans 8:28"
+    text: "And we know that for those who love God all things work together for good, for those who are called according to his purpose."
+    translation: "ESV"
+    theme: faith-doubts
+    tone: reassuring
+
+  - reference: "Psalm 46:10"
+    text: "Be still, and know that I am God. I will be exalted among the nations, I will be exalted in the earth!"
+    translation: "ESV"
+    theme: faith-doubts
+    tone: reassuring
+
+  # --- Parenting Adult Children ---
+  - reference: "Proverbs 22:6"
+    text: "Train up a child in the way he should go; even when he is old he will not depart from it."
+    translation: "ESV"
+    theme: adult-children
+    tone: peaceful
+
+  - reference: "Isaiah 54:13"
+    text: "All your children shall be taught by the Lord, and great shall be the peace of your children."
+    translation: "ESV"
+    theme: adult-children
+    tone: peaceful
+
+  - reference: "3 John 1:4"
+    text: "I have no greater joy than to hear that my children are walking in the truth."
+    translation: "ESV"
+    theme: adult-children
+    tone: peaceful
+
+  - reference: "Psalm 127:3"
+    text: "Behold, children are a heritage from the Lord, the fruit of the womb a reward."
+    translation: "ESV"
+    theme: adult-children
+    tone: peaceful
+
+  - reference: "Philippians 4:6-7"
+    text: "Do not be anxious about anything, but in everything by prayer and supplication with thanksgiving let your requests be made known to God. And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus."
+    translation: "ESV"
+    theme: adult-children
+    tone: peaceful
+
+  # --- Marriage After 25+ Years ---
+  - reference: "Ecclesiastes 4:9-10"
+    text: "Two are better than one, because they have a good reward for their toil. For if they fall, one will lift up his fellow."
+    translation: "ESV"
+    theme: marriage-renewal
+    tone: loving
+
+  - reference: "1 Corinthians 13:7"
+    text: "Love bears all things, believes all things, hopes all things, endures all things."
+    translation: "ESV"
+    theme: marriage-renewal
+    tone: loving
+
+  - reference: "Song of Solomon 8:7"
+    text: "Many waters cannot quench love, neither can floods drown it."
+    translation: "ESV"
+    theme: marriage-renewal
+    tone: loving
+
+  - reference: "Colossians 3:14"
+    text: "And above all these put on love, which binds everything together in perfect harmony."
+    translation: "ESV"
+    theme: marriage-renewal
+    tone: loving
+
+  - reference: "Ephesians 5:25"
+    text: "Husbands, love your wives, as Christ loved the church and gave himself up for her."
+    translation: "ESV"
+    theme: marriage-renewal
+    tone: loving
+
+  # --- Legacy & Eternal Purpose ---
+  - reference: "Psalm 71:18"
+    text: "So even to old age and gray hairs, O God, do not forsake me, until I proclaim your might to another generation, your power to all those to come."
+    translation: "ESV"
+    theme: legacy
+    tone: inspiring
+
+  - reference: "2 Timothy 4:7"
+    text: "I have fought the good fight, I have finished the race, I have kept the faith."
+    translation: "ESV"
+    theme: legacy
+    tone: inspiring
+
+  - reference: "Proverbs 13:22"
+    text: "A good man leaves an inheritance to his children's children, but the sinner's wealth is laid up for the righteous."
+    translation: "ESV"
+    theme: legacy
+    tone: inspiring
+
+  - reference: "Matthew 25:21"
+    text: "His master said to him, 'Well done, good and faithful servant. You have been faithful over a little; I will set you over much. Enter into the joy of your master.'"
+    translation: "ESV"
+    theme: legacy
+    tone: inspiring
+
+  - reference: "Hebrews 12:1"
+    text: "Therefore, since we are surrounded by so great a cloud of witnesses, let us also lay aside every weight, and sin which clings so closely, and let us run with endurance the race that is set before us."
+    translation: "ESV"
+    theme: legacy
+    tone: inspiring
+
+  # --- Grandparenting & Generational Blessing ---
+  - reference: "Psalm 128:6"
+    text: "May you see your children's children! Peace be upon Israel!"
+    translation: "ESV"
+    theme: grandparenting
+    tone: joyful
+
+  - reference: "Proverbs 17:6"
+    text: "Grandchildren are the crown of the aged, and the glory of children is their fathers."
+    translation: "ESV"
+    theme: grandparenting
+    tone: joyful
+
+  - reference: "Deuteronomy 4:9"
+    text: "Only take care, and keep your soul diligently, lest you forget the things that your eyes have seen, and lest they depart from your heart all the days of your life. Make them known to your children and your children's children."
+    translation: "ESV"
+    theme: grandparenting
+    tone: joyful
+
+  - reference: "Psalm 103:17"
+    text: "But the steadfast love of the Lord is from everlasting to everlasting on those who fear him, and his righteousness to children's children."
+    translation: "ESV"
+    theme: grandparenting
+    tone: joyful
+
+  - reference: "Titus 2:2-3"
+    text: "Older men are to be sober-minded, dignified, self-controlled, sound in faith, in love, and in steadfastness. Older women likewise are to be reverent in behavior."
+    translation: "ESV"
+    theme: grandparenting
+    tone: joyful

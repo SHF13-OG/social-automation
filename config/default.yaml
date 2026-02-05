@@ -1,0 +1,71 @@
+# Faith Content Automation - Default Configuration
+# Override values via dashboard UI (stored in config_overrides table)
+# API keys go in .env, NOT here
+
+# Content Generation
+content:
+  target_audience: "45+ Christians"
+  prayer_duration_sec:
+    min: 62
+    max: 70
+  words_per_minute: 140
+  default_translation: "ESV"
+
+# Voice Settings (ElevenLabs)
+voice:
+  provider: "elevenlabs"
+  default_voice_id: "EXAVITQu4vr4xnSDxMaL"  # Sarah - warm, mature
+  speed: 0.95  # Slightly slower for clarity
+  stability: 0.7
+  similarity_boost: 0.8
+
+# Video Settings
+video:
+  resolution: "1080x1920"  # TikTok vertical
+  fps: 30
+  format: "mp4"
+  codec: "libx264"
+  bitrate: "8M"
+
+# Text Overlay
+text:
+  font_family: "Georgia"
+  verse_font_size: 48
+  prayer_font_size: 36
+  color: "#FFFFFF"
+  shadow: true
+  shadow_color: "#000000"
+  shadow_opacity: 0.6
+  position: "bottom"
+  padding_percent: 5
+
+# Stock Footage
+footage:
+  primary_source: "pexels"
+  fallback_source: "pixabay"
+  preferred_duration_sec: 10
+  search_filters:
+    orientation: "portrait"
+    min_resolution: 1080
+
+# Publishing
+publishing:
+  platform: "tiktok"
+  default_post_time: "07:00"
+  timezone: "America/Chicago"
+  hashtags:
+    - "#faith"
+    - "#prayer"
+    - "#ChristianTikTok"
+    - "#over45"
+    - "#inspiration"
+  max_hashtags: 5
+  min_hours_between_posts: 4
+
+# Scheduling
+scheduling:
+  enabled: true
+  frequency: "daily"
+  days_ahead_to_generate: 7
+  retry_on_failure: true
+  max_retries: 3

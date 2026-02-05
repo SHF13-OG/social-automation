@@ -498,5 +498,215 @@ def export(
     print_top_posts(recent if len(recent) else df, "Top posts (by views)", n=top_n)
 
 
+# ---------------------------------------------------------------------------
+# Phase 1 commands: foundation for AI voice content pipeline
+# ---------------------------------------------------------------------------
+
+@app.command("init-db")
+def init_db_cmd() -> None:
+    """Initialize / migrate the full database schema (all tables)."""
+    from src.db import connect as db_connect, init_schema
+
+    db_path = get_db_path()
+    conn = db_connect(db_path)
+    init_schema(conn)
+    conn.close()
+    console.print(f"[bold]Schema initialized:[/bold] {db_path}")
+
+
+@app.command("config-show")
+def config_show() -> None:
+    """Display current configuration (YAML defaults + DB overrides)."""
+    from src.config import load_config, flatten_config
+
+    config = load_config()
+    table = Table(title="Current Configuration")
+    table.add_column("key", overflow="fold")
+    table.add_column("value", overflow="fold")
+
+    for key, value in flatten_config(config):
+        table.add_row(str(key), str(value))
+
+    console.print(table)
+
+
+@app.command("list-themes")
+def list_themes() -> None:
+    """List all available content themes from the database."""
+    from src.db import connect as db_connect, init_schema
+
+    db_path = get_db_path()
+    conn = db_connect(db_path)
+    init_schema(conn)
+
+    cur = conn.execute(
+        "SELECT slug, name, tone, is_active FROM themes ORDER BY slug"
+    )
+    rows = cur.fetchall()
+    conn.close()
+
+    if not rows:
+        console.print(
+            "[yellow]No themes in database.[/yellow] "
+            "Run: python -m src.main init-themes"
+        )
+        return
+
+    table = Table(title="Content Themes")
+    table.add_column("slug")
+    table.add_column("name")
+    table.add_column("tone")
+    table.add_column("active", justify="center")
+
+    for row in rows:
+        active = "Y" if row["is_active"] else "-"
+        table.add_row(row["slug"], row["name"], row["tone"] or "", active)
+
+    console.print(table)
+
+
+@app.command("init-themes")
+def init_themes_cmd(
+    yaml_path: str = typer.Argument(
+        "config/themes.yaml", help="Path to themes YAML file"
+    ),
+) -> None:
+    """Load themes from YAML into the database (upsert on slug)."""
+    import yaml as _yaml
+
+    from src.db import connect as db_connect, init_schema, now_utc
+
+    if not os.path.exists(yaml_path):
+        raise typer.BadParameter(f"File not found: {yaml_path}")
+
+    with open(yaml_path) as f:
+        data = _yaml.safe_load(f)
+
+    themes = data.get("themes", [])
+    if not themes:
+        console.print("[yellow]No themes found in YAML.[/yellow]")
+        return
+
+    db_path = get_db_path()
+    conn = db_connect(db_path)
+    init_schema(conn)
+
+    imported = 0
+    now = now_utc()
+    with conn:
+        for t in themes:
+            conn.execute(
+                """
+                INSERT INTO themes (slug, name, description, keywords, tone, is_active, created_at, updated_at)
+                VALUES (:slug, :name, :description, :keywords, :tone, :is_active, :created_at, :updated_at)
+                ON CONFLICT(slug) DO UPDATE SET
+                    name = excluded.name,
+                    description = excluded.description,
+                    keywords = excluded.keywords,
+                    tone = excluded.tone,
+                    is_active = excluded.is_active,
+                    updated_at = excluded.updated_at
+                """,
+                {
+                    "slug": t["slug"],
+                    "name": t["name"],
+                    "description": t.get("description", ""),
+                    "keywords": json.dumps(t.get("keywords", [])),
+                    "tone": t.get("tone", ""),
+                    "is_active": 1 if t.get("is_active", True) else 0,
+                    "created_at": now,
+                    "updated_at": now,
+                },
+            )
+            imported += 1
+
+    conn.close()
+    console.print(f"[bold]Themes upserted:[/bold] {imported}")
+
+
+@app.command("import-verses")
+def import_verses_cmd(
+    yaml_path: str = typer.Argument(
+        "config/verses.yaml", help="Path to verses YAML file"
+    ),
+) -> None:
+    """Import Bible verses from YAML into the database."""
+    import yaml as _yaml
+
+    from src.db import connect as db_connect, init_schema, now_utc
+
+    if not os.path.exists(yaml_path):
+        raise typer.BadParameter(f"File not found: {yaml_path}")
+
+    with open(yaml_path) as f:
+        data = _yaml.safe_load(f)
+
+    verses = data.get("verses", [])
+    if not verses:
+        console.print("[yellow]No verses found in YAML.[/yellow]")
+        return
+
+    db_path = get_db_path()
+    conn = db_connect(db_path)
+    init_schema(conn)
+
+    # Build slug -> id mapping for themes
+    cur = conn.execute("SELECT id, slug FROM themes")
+    theme_map = {row["slug"]: row["id"] for row in cur.fetchall()}
+
+    imported = 0
+    skipped = 0
+    now = now_utc()
+
+    with conn:
+        for v in verses:
+            theme_slug = v.get("theme", "")
+            theme_id = theme_map.get(theme_slug)
+            if theme_id is None:
+                console.print(
+                    f"[yellow]Skipping verse {v['reference']}: "
+                    f"theme '{theme_slug}' not in DB.[/yellow]"
+                )
+                skipped += 1
+                continue
+
+            # Check if verse already exists (by reference + theme)
+            existing = conn.execute(
+                "SELECT id FROM bible_verses WHERE reference = ? AND theme_id = ?",
+                (v["reference"], theme_id),
+            ).fetchone()
+
+            if existing:
+                conn.execute(
+                    """
+                    UPDATE bible_verses
+                    SET text = ?, translation = ?, tone = ?
+                    WHERE id = ?
+                    """,
+                    (v["text"], v.get("translation", "ESV"), v.get("tone", ""), existing["id"]),
+                )
+            else:
+                conn.execute(
+                    """
+                    INSERT INTO bible_verses (reference, text, translation, theme_id, tone, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        v["reference"],
+                        v["text"],
+                        v.get("translation", "ESV"),
+                        theme_id,
+                        v.get("tone", ""),
+                        now,
+                    ),
+                )
+            imported += 1
+
+    conn.close()
+    console.print(f"[bold]Verses imported/updated:[/bold] {imported}")
+    if skipped:
+        console.print(f"[yellow]Skipped:[/yellow] {skipped} (missing theme)")
+
+
 if __name__ == "__main__":
     app()

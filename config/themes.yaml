@@ -1,0 +1,99 @@
+# Content Themes - Second Half of Life
+# Each theme targets specific challenges faced by 45+ Christians
+
+themes:
+  - slug: grief
+    name: "Grief & Loss"
+    description: "Comfort for those mourning loved ones or facing loss"
+    keywords:
+      - "sunset peaceful"
+      - "nature calm"
+      - "candle memorial"
+      - "autumn leaves falling"
+      - "ocean waves gentle"
+    tone: "comforting"
+    is_active: true
+
+  - slug: retirement
+    name: "Retirement & New Seasons"
+    description: "Finding purpose and identity beyond career"
+    keywords:
+      - "garden peaceful morning"
+      - "sunrise mountain"
+      - "lake reflection"
+      - "quiet morning coffee"
+      - "open road ahead"
+    tone: "encouraging"
+    is_active: true
+
+  - slug: health
+    name: "Health Challenges"
+    description: "Strength and peace through physical trials"
+    keywords:
+      - "sunrise hope"
+      - "walking path nature"
+      - "light through window"
+      - "still water reflection"
+      - "morning dew flowers"
+    tone: "hopeful"
+    is_active: true
+
+  - slug: faith-doubts
+    name: "Faith Questions & Doubts"
+    description: "Navigating spiritual uncertainty with honesty"
+    keywords:
+      - "mountain mist clouds"
+      - "ocean horizon"
+      - "starry night sky"
+      - "cross silhouette sunset"
+      - "path through forest"
+    tone: "reassuring"
+    is_active: true
+
+  - slug: adult-children
+    name: "Parenting Adult Children"
+    description: "Letting go, trusting God with your kids"
+    keywords:
+      - "bird flying free"
+      - "empty nest home"
+      - "family gathering dinner"
+      - "hands releasing butterfly"
+      - "tree branches reaching"
+    tone: "peaceful"
+    is_active: true
+
+  - slug: marriage-renewal
+    name: "Marriage After 25+ Years"
+    description: "Rekindling love, deepening commitment"
+    keywords:
+      - "couple walking beach"
+      - "sunset together"
+      - "holding hands"
+      - "quiet evening home"
+      - "garden two chairs"
+    tone: "loving"
+    is_active: true
+
+  - slug: legacy
+    name: "Legacy & Eternal Purpose"
+    description: "Making an impact that outlasts your years"
+    keywords:
+      - "tree planting growth"
+      - "river flowing forward"
+      - "lighthouse beacon"
+      - "journal writing"
+      - "seeds sprouting soil"
+    tone: "inspiring"
+    is_active: true
+
+  - slug: grandparenting
+    name: "Grandparenting & Generational Blessing"
+    description: "The joy and responsibility of grandchildren"
+    keywords:
+      - "reading together warm"
+      - "playground children joy"
+      - "family hug"
+      - "baking together kitchen"
+      - "generations hands"
+    tone: "joyful"
+    is_active: true
