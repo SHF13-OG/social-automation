@@ -10,3 +10,9 @@ reports/*.md
 
 # local logs
 logs/
+
+# Generated media files
+media/
+
+# OAuth demo utility
+tiktok_demo.py
