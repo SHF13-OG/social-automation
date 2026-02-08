@@ -52,8 +52,8 @@ def generate_audio(
             "ELEVENLABS_API_KEY is not set. Add it to your .env file."
         )
 
-    # Read config defaults
-    voice_id = voice_id or get_config_value(
+    # Read config defaults - check env var first, then config, then hardcoded default
+    voice_id = voice_id or os.getenv("ELEVENLABS_VOICE_ID") or get_config_value(
         "voice.default_voice_id", "EXAVITQu4vr4xnSDxMaL", db_path
     )
     speed = speed if speed is not None else get_config_value(

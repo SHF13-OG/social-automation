@@ -309,6 +309,55 @@ def report(
     total_posts = len(df)
     console.print(f"[bold]Total posts in DB:[/bold] {total_posts}")
 
+    if total_posts == 0:
+        console.print("[yellow]No data yet.[/yellow] Import your CSV first.")
+        console.print("Example: python -m src.main import data/tiktok_posts.csv")
+        raise typer.Exit(code=0)
+
+    cutoff = datetime.now(timezone.utc) - timedelta(days=last_days)
+    recent = df[df["created_at_dt"].notna() & (df["created_at_dt"] >= cutoff)]
+
+    console.print(f"[bold]Posts in last {last_days} days:[/bold] {len(recent)}")
+
+    # Show summary for recent posts
+    frame = recent if len(recent) > 0 else df
+    label = f"Last {last_days} days" if len(recent) > 0 else "All time"
+
+    if len(frame) > 0:
+        total_views = int(frame["views"].sum())
+        total_eng = int(frame["engagement"].sum())
+        avg_views = float(frame["views"].mean())
+        med_views = float(frame["views"].median())
+        avg_er = float(frame["engagement_rate"].mean()) * 100.0
+
+        table = Table(title=f"{label} summary")
+        table.add_column("metric")
+        table.add_column("value", justify="right")
+        table.add_row("total_views", str(total_views))
+        table.add_row("total_engagement", str(total_eng))
+        table.add_row("avg_views", f"{avg_views:.1f}")
+        table.add_row("median_views", f"{med_views:.1f}")
+        table.add_row("avg_engagement_rate", f"{avg_er:.2f}%")
+        console.print(table)
+
+        # Recommendations
+        recs = []
+        if avg_er < 2.0:
+            recs.append("Engagement rate is low. Try stronger hooks in first 1-2 seconds.")
+        if med_views < 500:
+            recs.append("Median views are low. Test different posting times.")
+        if frame["shares"].sum() == 0:
+            recs.append("No shares recorded. Add prompts like 'Send this to someone who needs it'.")
+
+        if recs:
+            console.print("[bold]Recommendations:[/bold]")
+            for r in recs:
+                console.print(f"- {r}")
+
+    # Show top posts
+    print_top_posts(frame, "Top posts (by views)", n=top_n)
+
+
 def _markdown_escape(s: str) -> str:
     return s.replace("|", r"\|").replace("\n", " ").strip()
 
@@ -447,55 +496,6 @@ def export(
         f.write(md)
 
     console.print(f"[bold]Wrote report:[/bold] {out_path}")
-
-
-    if total_posts == 0:
-        console.print("[yellow]No data yet.[/yellow] Import your CSV first.")
-        console.print("Example: python -m src.main import data/tiktok_posts.csv")
-        raise typer.Exit(code=0)
-
-    cutoff = datetime.now(timezone.utc) - timedelta(days=last_days)
-    recent = df[df["created_at_dt"].notna() & (df["created_at_dt"] >= cutoff)]
-
-    console.print(f"[bold]Posts in last {last_days} days:[/bold] {len(recent)}")
-
-    def summary_block(frame: pd.DataFrame, label: str) -> None:
-        if len(frame) == 0:
-            console.print(f"[yellow]{label}:[/yellow] No parsable created_at dates found in this window.")
-            return
-        total_views = int(frame["views"].sum())
-        total_eng = int(frame["engagement"].sum())
-        avg_views = float(frame["views"].mean())
-        med_views = float(frame["views"].median())
-        avg_er = float(frame["engagement_rate"].mean()) * 100.0
-
-        table = Table(title=f"{label} summary")
-        table.add_column("metric")
-        table.add_column("value", justify="right")
-        table.add_row("total_views", str(total_views))
-        table.add_row("total_engagement", str(total_eng))
-        table.add_row("avg_views", f"{avg_views:.1f}")
-        table.add_row("median_views", f"{med_views:.1f}")
-        table.add_row("avg_engagement_rate", f"{avg_er:.2f}%")
-        console.print(table)
-
-        recs = []
-        if avg_er < 2.0:
-            recs.append("Engagement rate is low. Try stronger first 1-2 seconds, fewer words on screen, and a clearer payoff.")
-        if med_views < 500:
-            recs.append("Median views are low. Post more frequently for 7 days and test 2 posting times (morning vs evening).")
-        if frame["shares"].sum() == 0:
-            recs.append("No shares recorded. Add a prompt like 'Send this to someone who needs it' on a few posts.")
-        if len(frame) < 3:
-            recs.append("Not enough recent samples to trust patterns yet. Get 5-10 posts in before making big changes.")
-
-        if recs:
-            console.print("[bold]Recommendations:[/bold]")
-            for r in recs[:4]:
-                console.print(f"- {r}")
-
-    summary_block(recent, f"Last {last_days} days")
-    print_top_posts(recent if len(recent) else df, "Top posts (by views)", n=top_n)
 
 
 # ---------------------------------------------------------------------------
@@ -907,6 +907,8 @@ def compose_cmd(
             verse_ref=verse_row["reference"],
             verse_text=verse_row["text"],
             prayer_id=prayer_id,
+            prayer_text=prayer_row["prayer_text"],
+            theme_slug=theme_row["slug"],
             db_path=db_path,
         )
         video_id = save_video_record(

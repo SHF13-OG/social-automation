@@ -22,6 +22,9 @@ from src.db import now_utc
 
 TIKTOK_API_BASE = "https://open.tiktokapis.com/v2"
 
+# Max chunk size for uploads (10 MB)
+MAX_CHUNK_SIZE = 10 * 1024 * 1024
+
 # Publish statuses we track in the queue
 STATUS_PENDING = "pending"
 STATUS_APPROVED = "approved"
@@ -66,6 +69,10 @@ def init_direct_post(
     token = _get_access_token()
     file_size = Path(video_path).stat().st_size
 
+    # Calculate chunk size and count
+    chunk_size = min(file_size, MAX_CHUNK_SIZE)
+    total_chunks = (file_size + chunk_size - 1) // chunk_size  # Ceiling division
+
     resp = httpx.post(
         f"{TIKTOK_API_BASE}/post/publish/video/init/",
         headers={
@@ -83,8 +90,8 @@ def init_direct_post(
             "source_info": {
                 "source": "FILE_UPLOAD",
                 "video_size": file_size,
-                "chunk_size": file_size,
-                "total_chunk_count": 1,
+                "chunk_size": chunk_size,
+                "total_chunk_count": total_chunks,
             },
         },
         timeout=30,
@@ -97,24 +104,44 @@ def init_direct_post(
             f"TikTok init failed: {data.get('error', {}).get('message', 'Unknown error')}"
         )
 
-    return data.get("data", {})
+    result = data.get("data", {})
+    result["chunk_size"] = chunk_size
+    result["total_chunks"] = total_chunks
+    result["file_size"] = file_size
+    return result
 
 
-def upload_video(upload_url: str, video_path: str) -> None:
-    """Upload the video file to TikTok's upload_url."""
-    file_size = Path(video_path).stat().st_size
+def upload_video(
+    upload_url: str,
+    video_path: str,
+    chunk_size: int | None = None,
+    total_chunks: int | None = None,
+    file_size: int | None = None,
+) -> None:
+    """Upload the video file to TikTok's upload_url in chunks."""
+    if file_size is None:
+        file_size = Path(video_path).stat().st_size
+    if chunk_size is None:
+        chunk_size = min(file_size, MAX_CHUNK_SIZE)
+    if total_chunks is None:
+        total_chunks = (file_size + chunk_size - 1) // chunk_size
 
     with open(video_path, "rb") as f:
-        resp = httpx.put(
-            upload_url,
-            content=f.read(),
-            headers={
-                "Content-Range": f"bytes 0-{file_size - 1}/{file_size}",
-                "Content-Type": "video/mp4",
-            },
-            timeout=300,
-        )
-    resp.raise_for_status()
+        for chunk_idx in range(total_chunks):
+            start_byte = chunk_idx * chunk_size
+            end_byte = min(start_byte + chunk_size, file_size) - 1
+            chunk_data = f.read(chunk_size)
+
+            resp = httpx.put(
+                upload_url,
+                content=chunk_data,
+                headers={
+                    "Content-Range": f"bytes {start_byte}-{end_byte}/{file_size}",
+                    "Content-Type": "video/mp4",
+                },
+                timeout=300,
+            )
+            resp.raise_for_status()
 
 
 def check_publish_status(publish_id: str) -> dict[str, Any]:
@@ -154,8 +181,14 @@ def publish_video(
     if not upload_url:
         raise RuntimeError("TikTok did not return an upload_url.")
 
-    # Step 2: Upload
-    upload_video(upload_url, video_path)
+    # Step 2: Upload with chunking
+    upload_video(
+        upload_url,
+        video_path,
+        chunk_size=init_data.get("chunk_size"),
+        total_chunks=init_data.get("total_chunks"),
+        file_size=init_data.get("file_size"),
+    )
 
     return {
         "publish_id": publish_id,

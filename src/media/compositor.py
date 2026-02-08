@@ -11,6 +11,7 @@ from typing import Any
 
 from src.config import get_config_value
 from src.db import now_utc
+from src.media.text_overlay import generate_overlay_frames
 
 VIDEO_DIR = Path("media/videos")
 
@@ -100,6 +101,8 @@ def compose_video(
     verse_ref: str,
     verse_text: str,
     prayer_id: int,
+    prayer_text: str = "",
+    theme_slug: str = "",
     db_path: str | None = None,
 ) -> dict[str, Any]:
     """Assemble the final TikTok video.
@@ -117,35 +120,73 @@ def compose_video(
     VIDEO_DIR.mkdir(parents=True, exist_ok=True)
     out_path = VIDEO_DIR / f"video_{prayer_id}.mp4"
 
-    # Build the FFmpeg command
-    # Strategy: loop the first footage clip to match audio duration,
-    # scale to 1080x1920, overlay text, mux with audio.
     if not footage_paths:
         raise RuntimeError("No footage clips provided.")
 
     footage_input = footage_paths[0]  # Primary clip
 
-    text_filter = _build_text_filter(verse_ref, verse_text, duration, db_path)
+    # Generate text overlay frames using Pillow
+    overlay_frames = []
+    if prayer_text and theme_slug:
+        overlay_frames = generate_overlay_frames(
+            verse_ref=verse_ref,
+            verse_text=verse_text,
+            prayer_text=prayer_text,
+            theme_slug=theme_slug,
+            duration_sec=duration,
+            width=int(width),
+            height=int(height),
+        )
 
-    # Build filter complex:
-    # 1. Loop/trim footage to match audio duration
-    # 2. Scale + crop to portrait (1080x1920)
-    # 3. Add text overlays
-    filter_complex = (
-        f"[0:v]loop=loop=-1:size=1000:start=0,"
-        f"trim=duration={duration},"
-        f"setpts=PTS-STARTPTS,"
-        f"scale={width}:{height}:force_original_aspect_ratio=increase,"
-        f"crop={width}:{height},"
-        f"{text_filter}"
-        f"[outv]"
-    )
+    # Build FFmpeg command with overlay inputs
+    cmd = [ffmpeg, "-y"]
 
-    cmd = [
-        ffmpeg,
-        "-y",
-        "-i", footage_input,
-        "-i", audio_path,
+    # Input 0: footage
+    cmd.extend(["-i", footage_input])
+
+    # Input 1: audio
+    cmd.extend(["-i", audio_path])
+
+    # Inputs 2+: overlay PNGs
+    for frame in overlay_frames:
+        cmd.extend(["-i", frame["file_path"]])
+
+    if overlay_frames:
+        # Build filter complex with timed overlays
+        # First, prepare the video (loop, trim, scale, crop)
+        filter_parts = [
+            f"[0:v]loop=loop=-1:size=1000:start=0,"
+            f"trim=duration={duration},"
+            f"setpts=PTS-STARTPTS,"
+            f"scale={width}:{height}:force_original_aspect_ratio=increase,"
+            f"crop={width}:{height}[base]"
+        ]
+
+        # Chain overlays with enable expressions for timing
+        prev_label = "base"
+        for i, frame in enumerate(overlay_frames):
+            input_idx = i + 2  # overlay inputs start at index 2
+            start = frame["start_sec"]
+            end = frame["end_sec"]
+            out_label = f"v{i}" if i < len(overlay_frames) - 1 else "outv"
+
+            filter_parts.append(
+                f"[{prev_label}][{input_idx}:v]overlay=0:0:enable='between(t,{start},{end})'[{out_label}]"
+            )
+            prev_label = out_label
+
+        filter_complex = ";".join(filter_parts)
+    else:
+        # No overlays - simple filter
+        filter_complex = (
+            f"[0:v]loop=loop=-1:size=1000:start=0,"
+            f"trim=duration={duration},"
+            f"setpts=PTS-STARTPTS,"
+            f"scale={width}:{height}:force_original_aspect_ratio=increase,"
+            f"crop={width}:{height}[outv]"
+        )
+
+    cmd.extend([
         "-filter_complex", filter_complex,
         "-map", "[outv]",
         "-map", "1:a",
@@ -158,7 +199,7 @@ def compose_video(
         "-shortest",
         "-movflags", "+faststart",
         str(out_path),
-    ]
+    ])
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
     if result.returncode != 0:
