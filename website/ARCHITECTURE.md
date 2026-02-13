@@ -27,16 +27,18 @@ graph TB
         end
 
         subgraph "Admin Pages"
-            AdminLogin[Admin Login<br/>/admin/login]
+            Login[Login<br/>/login]
             Dashboard[Dashboard<br/>/admin]
             Themes[Themes Management<br/>/admin/themes]
             Prayers[Prayers Management<br/>/admin/prayers]
             Schedule[Schedule/Queue<br/>/admin/schedule]
             Chat[AI Chat<br/>/admin/chat]
+            Tests[Test Dashboard<br/>/admin/tests]
         end
 
         subgraph "API Routes"
-            AuthAPI[NextAuth API<br/>/api/auth/*]
+            AuthAPI[Custom OAuth<br/>/api/auth/google/*]
+            SessionAPI[Session API<br/>/api/auth/session]
             PrayerAPI[Prayer API<br/>/api/prayer/today]
             AnalyticsAPI[Analytics API<br/>/api/analytics]
             ThemesAPI[Themes API<br/>/api/themes]
@@ -44,6 +46,7 @@ graph TB
             QueueAPI[Queue API<br/>/api/queue]
             ChatAPI[Chat API<br/>/api/chat]
             AudioAPI[Audio API<br/>/api/audio/[id]]
+            TestsAPI[Tests API<br/>/api/tests]
         end
     end
 
@@ -168,15 +171,17 @@ sequenceDiagram
     Note over U,Auth: Admin Login Flow
     U->>B: Visit /admin
     B->>CF: GET /admin
-    CF->>API: Check session
+    CF->>API: Check session (JWT cookie)
     API-->>CF: No session
-    CF-->>B: Redirect to /admin/login
+    CF-->>B: Redirect to /login
     U->>B: Click "Sign in with Google"
-    B->>Auth: OAuth flow
-    Auth-->>B: Auth token
-    B->>API: POST /api/auth/callback/google
+    B->>API: GET /api/auth/google
+    API->>Auth: Redirect to Google OAuth
+    Auth-->>B: Auth code
+    B->>API: GET /api/auth/google/callback
     API->>API: Verify email matches ADMIN_EMAIL
-    API-->>B: Session cookie
+    API->>API: Create JWT session
+    API-->>B: Set session cookie
     B->>CF: GET /admin
     CF-->>B: Admin dashboard
 
@@ -271,22 +276,31 @@ website/
 │   │   │   └── page.tsx         # Prayer archive listing
 │   │   └── [date]/
 │   │       └── page.tsx         # Prayer by date
+│   ├── login/
+│   │   └── page.tsx             # Login page (outside admin layout)
 │   ├── admin/
 │   │   ├── layout.tsx           # Admin layout with auth check
 │   │   ├── page.tsx             # Dashboard
-│   │   ├── login/
-│   │   │   └── page.tsx         # Login page
 │   │   ├── themes/
 │   │   │   └── page.tsx         # Themes management
 │   │   ├── prayers/
 │   │   │   └── page.tsx         # Prayers management
 │   │   ├── schedule/
 │   │   │   └── page.tsx         # Queue/schedule view
-│   │   └── chat/
-│   │       └── page.tsx         # AI chat assistant
+│   │   ├── chat/
+│   │   │   └── page.tsx         # AI chat assistant
+│   │   └── tests/
+│   │       └── page.tsx         # Test status dashboard
 │   └── api/
-│       ├── auth/[...nextauth]/
-│       │   └── route.ts         # NextAuth handlers
+│       ├── auth/
+│       │   ├── google/
+│       │   │   └── route.ts     # Initiate Google OAuth
+│       │   ├── google/callback/
+│       │   │   └── route.ts     # Handle OAuth callback
+│       │   ├── logout/
+│       │   │   └── route.ts     # Clear session
+│       │   └── session/
+│       │       └── route.ts     # Get current session
 │       ├── prayer/today/
 │       │   └── route.ts         # Today's prayer API
 │       ├── analytics/
@@ -299,6 +313,8 @@ website/
 │       │   └── route.ts         # Video queue status
 │       ├── chat/
 │       │   └── route.ts         # AI chat endpoint
+│       ├── tests/
+│       │   └── route.ts         # Test run history
 │       └── audio/[id]/
 │           └── route.ts         # Audio file streaming
 ├── components/
@@ -308,7 +324,8 @@ website/
 │   ├── Providers.tsx            # Session provider wrapper
 │   └── ShareButtons.tsx         # Social sharing buttons
 ├── lib/
-│   ├── auth.ts                  # NextAuth configuration
+│   ├── auth.ts                  # Auth utilities
+│   ├── session.ts               # JWT session management
 │   └── db.ts                    # Database utilities
 ├── public/
 │   ├── 2nd_half_faith_icon_1024x1024.png
@@ -328,21 +345,25 @@ website/
 
 ```mermaid
 flowchart TD
-    A[User visits /admin] --> B{Has valid session?}
-    B -->|No| C[Redirect to /admin/login]
+    A[User visits /admin] --> B{Has valid JWT session?}
+    B -->|No| C[Redirect to /login]
     B -->|Yes| D[Show admin dashboard]
 
     C --> E[User clicks Sign in with Google]
-    E --> F[Google OAuth consent screen]
-    F --> G[User authorizes]
-    G --> H[Callback to /api/auth/callback/google]
+    E --> F[GET /api/auth/google]
+    F --> G[Redirect to Google OAuth]
+    G --> H[User authorizes]
+    H --> I[Callback to /api/auth/google/callback]
 
-    H --> I{Email matches ADMIN_EMAIL?}
-    I -->|No| J[Access denied]
-    I -->|Yes| K[Create session]
-    K --> L[Redirect to /admin]
-    L --> D
+    I --> J{Email matches ADMIN_EMAIL?}
+    J -->|No| K[Access denied]
+    J -->|Yes| L[Create JWT token]
+    L --> M[Set session cookie - 30 day expiry]
+    M --> N[Redirect to /admin]
+    N --> D
 ```
+
+Note: We use custom OAuth implementation instead of NextAuth because NextAuth's internal state handling doesn't work on Cloudflare Workers.
 
 ## Environment Variables
 
@@ -360,18 +381,41 @@ flowchart TD
 ## Technology Stack
 
 - **Framework**: Next.js 15 (App Router)
-- **Hosting**: Cloudflare Pages + Workers
+- **Hosting**: Cloudflare Pages + Workers (via OpenNext)
 - **Database**: SQLite (via sql.js)
-- **Authentication**: NextAuth.js with Google OAuth
+- **Authentication**: Custom Google OAuth with JWT sessions (jose library)
 - **AI**: OpenAI GPT-4 Turbo
 - **Styling**: Tailwind CSS
 - **Charts**: Recharts
 - **Icons**: Lucide React
+- **Testing**: Jest + React Testing Library
+
+## Testing
+
+The website includes a comprehensive testing framework with 146 tests across 5 categories:
+
+| Category | Tests | Schedule |
+|----------|-------|----------|
+| Auth | OAuth flow, session management | CI |
+| API | All endpoint validation | CI |
+| Website | Pages, components | CI |
+| Data | Freshness, integrity | Daily |
+| TikTok | API mocking, publishing flow | Daily |
+
+Run tests:
+```bash
+npm test                                    # All tests
+npm test -- --testPathPattern="__tests__/auth"  # Category
+npm test -- --coverage                      # With coverage
+```
+
+See [TESTING.md](./TESTING.md) for full documentation.
 
 ## Security Considerations
 
 1. **Authentication**: Only `ADMIN_EMAIL` can access admin pages
-2. **Session**: Encrypted with `NEXTAUTH_SECRET`
-3. **API Protection**: All admin APIs check for valid session
-4. **OAuth Secrets**: Stored encrypted in Cloudflare
+2. **Session**: JWT tokens signed with `NEXTAUTH_SECRET`, 30-day expiry
+3. **API Protection**: All admin APIs check for valid JWT session
+4. **OAuth Secrets**: Stored encrypted in Cloudflare environment
 5. **Database**: Read-only for public, write for admin only
+6. **Custom OAuth**: Built to work on Cloudflare Workers (NextAuth incompatible)
