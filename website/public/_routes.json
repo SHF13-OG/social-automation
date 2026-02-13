@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "include": ["/*"],
+  "exclude": [
+    "/_next/static/*",
+    "/2nd_half_faith_icon_1024x1024.png",
+    "/PRIVACY.md",
+    "/TERMS.md",
+    "/tiktok*.txt",
+    "/BUILD_ID"
+  ]
+}

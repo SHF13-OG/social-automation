@@ -1,0 +1,8 @@
+; Cloudflare DNS Import File for 2ndhalffaith.com
+; Import via: DNS > Records > Import and Export > Import DNS records
+
+; Root domain - points to Cloudflare Pages
+2ndhalffaith.com.	1	IN	CNAME	2ndhalffaith.pages.dev.
+
+; WWW subdomain - points to Cloudflare Pages
+www.2ndhalffaith.com.	1	IN	CNAME	2ndhalffaith.pages.dev.

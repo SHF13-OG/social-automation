@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --navy: #1e2a3a;
+  --charcoal: #2d3748;
+  --navy-charcoal: #252f3f;
+  --accent-beige: #E8D5B7;
+  --accent-gold: #C9A962;
+  --cream: #f5f0e8;
+}
+
+html {
+  background: var(--navy);
+}
+
+body {
+  font-family: Georgia, 'Times New Roman', serif;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--charcoal) 50%, var(--navy-charcoal) 100%);
+  min-height: 100vh;
+  color: var(--cream);
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--navy);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--charcoal);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-beige);
+}
+
+/* Prayer text styling */
+.prayer-text {
+  line-height: 1.8;
+  letter-spacing: 0.02em;
+}
+
+/* Audio player custom styling */
+.audio-player {
+  background: rgba(45, 55, 72, 0.5);
+  border: 1px solid var(--accent-beige);
+  border-radius: 12px;
+}

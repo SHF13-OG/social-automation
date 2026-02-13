@@ -51,6 +51,11 @@ node_modules/
 .open-next/
 .deploy/
 coverage/
+website/.deploy/
+website/.next/
+website/.open-next/
+website/node_modules/
+website/coverage/
 
 # OAuth demo utility
 tiktok_demo.py
