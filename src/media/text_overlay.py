@@ -9,6 +9,10 @@ from PIL import Image, ImageDraw, ImageFont
 
 OVERLAY_DIR = Path("media/overlays")
 
+# TikTok's UI covers the bottom ~20% of a 1920px-tall video.
+# Nothing important should render below (height - TIKTOK_BOTTOM_SAFE_ZONE).
+TIKTOK_BOTTOM_SAFE_ZONE = 384  # 20% of 1920
+
 # Theme-based calls to action
 THEME_CTAS = {
     "grief": "Share who you're remembering today",
@@ -89,6 +93,7 @@ def generate_overlay_frames(
     duration_sec: float,
     width: int = 1080,
     height: int = 1920,
+    cta_override: str | None = None,
 ) -> list[dict[str, Any]]:
     """Generate overlay PNG frames for different sections of the video.
 
@@ -134,7 +139,10 @@ def generate_overlay_frames(
     chunk_duration = prayer_duration / num_chunks
 
     frames = []
-    cta_text = THEME_CTAS.get(theme_slug, "Share your prayer in the comments")
+    cta_text = cta_override or THEME_CTAS.get(theme_slug, "Share your prayer in the comments")
+
+    # Safe zone boundary: nothing below this y value
+    safe_zone_y = height - TIKTOK_BOTTOM_SAFE_ZONE
 
     # Generate frame for each prayer chunk
     for i, chunk in enumerate(prayer_chunks):
@@ -176,6 +184,14 @@ def generate_overlay_frames(
         prayer_box_top = y_cursor
         prayer_box_bottom = y_cursor + prayer_height
 
+        # Clamp prayer box so it doesn't extend into the safe zone
+        max_prayer_bottom = safe_zone_y - 80  # leave gap for CTA
+        if prayer_box_bottom > max_prayer_bottom:
+            shift = prayer_box_bottom - max_prayer_bottom
+            prayer_box_top -= shift
+            prayer_box_bottom -= shift
+            y_cursor = prayer_box_top
+
         # Draw rounded rectangle background for prayer
         draw.rounded_rectangle(
             [margin - 20, prayer_box_top, width - margin + 20, prayer_box_bottom],
@@ -188,9 +204,12 @@ def generate_overlay_frames(
             _draw_text_with_shadow(draw, (margin, y_cursor), line, prayer_font, shadow_offset=2)
             y_cursor += 55
 
-        # CTA at bottom
-        cta_y = height - margin - 100
+        # CTA at bottom — above the TikTok UI safe zone
+        cta_y = safe_zone_y
         cta_lines = _wrap_text(cta_text, cta_font, max_text_width)
+        # Position CTA so its last line ends at safe_zone_y
+        cta_total_height = len(cta_lines) * 45
+        cta_y = safe_zone_y - cta_total_height
         for line in cta_lines:
             line_bbox = cta_font.getbbox(line)
             line_width = line_bbox[2] - line_bbox[0]
@@ -230,6 +249,7 @@ def generate_single_overlay(
     chunk_index: int,
     width: int = 1080,
     height: int = 1920,
+    cta_override: str | None = None,
 ) -> str:
     """Generate a single overlay image for a specific prayer chunk.
 
@@ -294,11 +314,22 @@ def generate_single_overlay(
     # Space before prayer
     y_cursor += 60
 
+    # Safe zone boundary: nothing below this y value
+    safe_zone_y = height - TIKTOK_BOTTOM_SAFE_ZONE
+
     # Prayer text box background
     prayer_lines = _wrap_text(chunk, prayer_font, max_text_width - 40)
     prayer_height = len(prayer_lines) * 55 + 40
     prayer_box_top = y_cursor
     prayer_box_bottom = y_cursor + prayer_height
+
+    # Clamp prayer box so it doesn't extend into the safe zone
+    max_prayer_bottom = safe_zone_y - 80
+    if prayer_box_bottom > max_prayer_bottom:
+        shift = prayer_box_bottom - max_prayer_bottom
+        prayer_box_top -= shift
+        prayer_box_bottom -= shift
+        y_cursor = prayer_box_top
 
     draw.rounded_rectangle(
         [margin - 20, prayer_box_top, width - margin + 20, prayer_box_bottom],
@@ -311,10 +342,11 @@ def generate_single_overlay(
         _draw_text_with_shadow(draw, (margin, y_cursor), line, prayer_font, shadow_offset=2)
         y_cursor += 55
 
-    # CTA at bottom
-    cta_text = THEME_CTAS.get(theme_slug, "Share your prayer in the comments")
-    cta_y = height - margin - 100
+    # CTA at bottom — above the TikTok UI safe zone
+    cta_text = cta_override or THEME_CTAS.get(theme_slug, "Share your prayer in the comments")
     cta_lines = _wrap_text(cta_text, cta_font, max_text_width)
+    cta_total_height = len(cta_lines) * 45
+    cta_y = safe_zone_y - cta_total_height
     for line in cta_lines:
         line_bbox = cta_font.getbbox(line)
         line_width = line_bbox[2] - line_bbox[0]

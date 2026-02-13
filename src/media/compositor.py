@@ -104,6 +104,7 @@ def compose_video(
     prayer_text: str = "",
     theme_slug: str = "",
     db_path: str | None = None,
+    cta_override: str | None = None,
 ) -> dict[str, Any]:
     """Assemble the final TikTok video.
 
@@ -136,6 +137,7 @@ def compose_video(
             duration_sec=duration,
             width=int(width),
             height=int(height),
+            cta_override=cta_override,
         )
 
     # Build FFmpeg command with overlay inputs

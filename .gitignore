@@ -27,8 +27,8 @@ data/*.csv
 logs/
 *.log
 
-# Generated media files
-media/
+# Generated media files (top-level only, not src/media/)
+/media/
 *.mp4
 *.mov
 *.wav

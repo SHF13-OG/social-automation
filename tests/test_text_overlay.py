@@ -8,6 +8,7 @@ import pytest
 
 from src.media.text_overlay import (
     THEME_CTAS,
+    TIKTOK_BOTTOM_SAFE_ZONE,
     _wrap_text,
     _get_font,
     generate_overlay_frames,
@@ -294,3 +295,44 @@ class TestIntegration:
             # Verify timing is sequential and non-overlapping
             for i in range(len(frames) - 1):
                 assert frames[i]["end_sec"] >= frames[i + 1]["start_sec"] - 0.01  # Allow small gap
+
+
+class TestTikTokSafeZone:
+    """Tests for TikTok safe zone compliance."""
+
+    def test_safe_zone_constant_exists(self):
+        assert TIKTOK_BOTTOM_SAFE_ZONE is not None
+
+    def test_safe_zone_in_reasonable_range(self):
+        # 15-21% of 1920 = 288-403
+        assert 288 <= TIKTOK_BOTTOM_SAFE_ZONE <= 400
+
+    def test_cta_renders_above_safe_zone(self, tmp_path):
+        """CTA text must not appear below (height - safe_zone) pixels."""
+        import numpy as np
+        from PIL import Image
+
+        overlay_dir = tmp_path / "overlays"
+        with patch('src.media.text_overlay.OVERLAY_DIR', overlay_dir):
+            overlay_dir.mkdir(parents=True, exist_ok=True)
+
+            height = 1920
+            path = generate_single_overlay(
+                verse_ref="Psalm 23:4",
+                verse_text="Even though I walk through the valley.",
+                prayer_text=" ".join(["word"] * 100),
+                theme_slug="grief",
+                chunk_index=0,
+                width=1080,
+                height=height,
+            )
+
+            img = Image.open(path)
+            arr = np.array(img)
+
+            # Check that no non-transparent pixels exist below the safe zone boundary
+            safe_zone_y = height - TIKTOK_BOTTOM_SAFE_ZONE
+            below_safe_zone = arr[safe_zone_y:, :, 3]  # Alpha channel
+            assert below_safe_zone.max() == 0, (
+                f"Found rendered pixels below safe zone (y>{safe_zone_y})"
+            )
