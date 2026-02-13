@@ -1,0 +1,86 @@
+name: Daily Tests
+
+on:
+  schedule:
+    # Run at 6:00 AM UTC every day
+    - cron: '0 6 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+defaults:
+  run:
+    working-directory: website
+
+jobs:
+  daily-tests:
+    name: Daily Data & Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run data quality tests
+        run: npm test -- --testPathPattern="__tests__/data" --json --outputFile=data-test-results.json
+        env:
+          NEXTAUTH_SECRET: test-secret-for-ci
+          NEXTAUTH_URL: http://localhost:3000
+          GOOGLE_CLIENT_ID: test-client-id
+          GOOGLE_CLIENT_SECRET: test-client-secret
+          ADMIN_EMAIL: test@example.com
+
+      - name: Run TikTok integration tests
+        run: npm test -- --testPathPattern="__tests__/tiktok" --json --outputFile=tiktok-test-results.json
+        env:
+          NEXTAUTH_SECRET: test-secret-for-ci
+          NEXTAUTH_URL: http://localhost:3000
+          GOOGLE_CLIENT_ID: test-client-id
+          GOOGLE_CLIENT_SECRET: test-client-secret
+          ADMIN_EMAIL: test@example.com
+
+      - name: Generate daily test summary
+        if: always()
+        run: |
+          echo "## Daily Test Results - $(date -u +%Y-%m-%d)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          echo "### Data Quality Tests" >> $GITHUB_STEP_SUMMARY
+          if [ -f data-test-results.json ]; then
+            PASSED=$(jq '.numPassedTests' data-test-results.json)
+            FAILED=$(jq '.numFailedTests' data-test-results.json)
+            echo "- Passed: $PASSED | Failed: $FAILED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Results not available" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### TikTok Integration Tests" >> $GITHUB_STEP_SUMMARY
+          if [ -f tiktok-test-results.json ]; then
+            PASSED=$(jq '.numPassedTests' tiktok-test-results.json)
+            FAILED=$(jq '.numFailedTests' tiktok-test-results.json)
+            echo "- Passed: $PASSED | Failed: $FAILED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- Results not available" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload daily test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: daily-test-results-${{ github.run_id }}
+          path: |
+            website/data-test-results.json
+            website/tiktok-test-results.json
+          retention-days: 30
+
+      - name: Check for failures
+        if: failure()
+        run: |
+          echo "::warning::Daily tests have failures. Check the test results for details."
