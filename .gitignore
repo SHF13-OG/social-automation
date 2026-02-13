@@ -19,6 +19,8 @@ build/
 # Database
 *.sqlite3
 *.db
+*.db-shm
+*.db-wal
 data/*.csv
 
 # Logs
