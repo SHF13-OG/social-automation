@@ -1,18 +1,60 @@
+# Python
 .venv/
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Database
 *.sqlite3
 *.db
-.env
 data/*.csv
-reports/*.md
-.DS_Store
 
-# local logs
+# Logs
 logs/
+*.log
 
 # Generated media files
 media/
+*.mp4
+*.mov
+*.wav
+*.mp3
+*.zip
+
+# Reports (generated)
+reports/*.md
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Node.js (website)
+node_modules/
+.next/
+.open-next/
+.deploy/
+coverage/
 
 # OAuth demo utility
 tiktok_demo.py
+
+# Temporary files
+*.tmp
+*.temp
