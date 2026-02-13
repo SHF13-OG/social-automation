@@ -6,6 +6,10 @@ This project automates faith-based TikTok content creation for an audience of 45
 navigating the second half of life. Content includes daily prayer videos with Bible verses,
 AI voiceovers, and stock footage backgrounds.
 
+**Publishing Model:** Videos are generated automatically, then manually uploaded to TikTok
+via TikTok Studio. The TikTok Content Posting API code is preserved but disabled pending
+approval for production use (see `src/publishing/tiktok.py`).
+
 ## Development Commands
 
 ```bash
@@ -22,9 +26,30 @@ ruff check src/ tests/
 python -m src.main --help
 python -m src.main doctor
 
+# Generate daily content
+python -m src.main generate-daily
+
 # Run dashboard
 streamlit run src/dashboard.py --server.port 8501 --server.headless true
 ```
+
+## Daily Workflow
+
+### Automated (runs via cron or manually)
+```bash
+python -m src.main generate-daily
+```
+This creates:
+- Prayer text (AI-generated)
+- Audio voiceover (ElevenLabs)
+- Composited video (FFmpeg)
+- Output: `media/YYYY-MM-DD_prayer.mp4`
+
+### Manual (2-5 minutes daily)
+1. Open TikTok Studio: https://www.tiktok.com/tiktokstudio
+2. Click "Upload" → drag video from `media/` folder
+3. Add caption (verse reference + hashtags)
+4. Schedule or post immediately
 
 ## Architecture
 
@@ -32,6 +57,31 @@ streamlit run src/dashboard.py --server.port 8501 --server.headless true
 - **Dashboard**: Streamlit (`src/dashboard.py`) - analytics, config UI, publishing queue
 - **Database**: SQLite (`data/social.db`) - posts, themes, verses, generated content
 - **Config**: YAML defaults (`config/`) + DB overrides (`config_overrides` table)
+- **Website**: Next.js (`website/`) - public prayer display + admin dashboard
+
+### Content Pipeline
+```
+Theme Selection → Verse Selection → Prayer Generation (AI)
+                                          ↓
+                                    Audio (ElevenLabs)
+                                          ↓
+                                    Stock Footage (Pexels)
+                                          ↓
+                                    Video Compositing (FFmpeg)
+                                          ↓
+                                    Output: media/YYYY-MM-DD_prayer.mp4
+                                          ↓
+                                    [Manual] Upload to TikTok Studio
+```
+
+### TikTok API Integration (Currently Disabled)
+
+The TikTok Content Posting API integration is fully implemented but disabled:
+- **Why disabled:** TikTok rejected our sandbox submission because their API
+  does not support personal/internal company use (managing your own account).
+- **Code location:** `src/publishing/tiktok.py` (commented out, well-documented)
+- **To re-enable:** If approved for production API access in the future, uncomment
+  the code and set `TIKTOK_ACCESS_TOKEN` in `.env`.
 
 ## CRITICAL SAFETY RULES
 
@@ -43,18 +93,16 @@ streamlit run src/dashboard.py --server.port 8501 --server.headless true
 - Rotate keys immediately if exposed in any commit
 
 ### Content Publishing
-- NEVER publish content without human review via dry-run mode first
-- ALWAYS respect rate limits: maximum 1 post per 4 hours
-- NEVER auto-reply to comments without explicit human approval
-- NEVER post more than 1 video per day unless the user explicitly requests it
+- NEVER publish content without human review first
+- ALWAYS preview generated videos before uploading to TikTok
+- NEVER post more than 1 video per day unless explicitly decided
 - ALWAYS include stock footage attribution per license requirements
-- Auto-pause publishing after 3 consecutive failures
 
 ### Content Guidelines
 - NEVER generate content that promises physical healing or financial prosperity
 - NEVER use "name it and claim it" or prosperity gospel language
 - NEVER use manipulative, fear-based, or guilt-based language
-- ALWAYS verify Bible verse text accuracy against the specified translation
+- ALWAYS verify Bible verse text accuracy against the specified translation (ESV)
 - ALWAYS maintain a reverent, respectful, and conversational tone
 - ALWAYS keep prayers personal and relatable ("Father, I come to you...")
 - Target prayer duration: 62-70 seconds (approximately 150 words at 140 WPM)
@@ -67,20 +115,20 @@ streamlit run src/dashboard.py --server.port 8501 --server.headless true
 
 ## AUTOMATION BOUNDARIES
 
-### Allowed Automations
-- Scheduled posting at user-configured times
-- Stock footage search and download from licensed sources
-- Audio generation via configured TTS provider (ElevenLabs)
-- Video compositing with pre-approved templates
-- Analytics collection from own TikTok account only
-- Daily test runs and CI status reporting
+### Fully Automated
+- Prayer text generation (AI)
+- Audio voiceover generation (ElevenLabs TTS)
+- Stock footage search and download (Pexels/Pixabay)
+- Video compositing (FFmpeg)
+- Daily content pipeline execution
+- Test runs and CI status reporting
 
-### Requires Human Approval
-- Publishing any new content (first 10 posts minimum)
+### Requires Human Action
+- Uploading videos to TikTok (via TikTok Studio)
+- Reviewing generated content before posting
 - Responding to comments or messages
 - Changing posting frequency
 - Modifying content themes or Bible verse database
-- Changing TTS voice or video style significantly
 - Any interaction with followers
 
 ### Prohibited Actions
@@ -99,3 +147,11 @@ streamlit run src/dashboard.py --server.port 8501 --server.headless true
 - SQLite with WAL mode for database
 - All timestamps stored in UTC, displayed in configured timezone
 - YAML for configuration, environment variables for secrets
+- DRY: Extract common logic into reusable functions
+- Safe: Validate inputs, handle errors gracefully, fail loudly on critical issues
+
+## Scripture Attribution
+
+Scripture quotations are from the ESV Bible (The Holy Bible, English Standard Version),
+copyright 2001 by Crossway, a publishing ministry of Good News Publishers.
+Used by permission. All rights reserved.

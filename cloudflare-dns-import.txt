@@ -1,0 +1,11 @@
+; DNS records for 2ndhalffaith.com - GitHub Pages
+; Import this file in Cloudflare: DNS > Records > Import and Export > Import
+
+; GitHub Pages A records
+2ndhalffaith.com.	1	IN	A	185.199.108.153
+2ndhalffaith.com.	1	IN	A	185.199.109.153
+2ndhalffaith.com.	1	IN	A	185.199.110.153
+2ndhalffaith.com.	1	IN	A	185.199.111.153
+
+; www subdomain
+www.2ndhalffaith.com.	1	IN	CNAME	shf13-og.github.io.
