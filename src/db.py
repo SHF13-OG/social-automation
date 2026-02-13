@@ -185,4 +185,26 @@ CREATE TABLE IF NOT EXISTS test_runs (
     started_at      TEXT,
     completed_at    TEXT
 );
+
+-- Lineup entries (replaces YAML-based lineup)
+CREATE TABLE IF NOT EXISTS lineup_entries (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_number     INTEGER NOT NULL,
+    theme_id        INTEGER REFERENCES themes(id),
+    theme_slug      TEXT NOT NULL,
+    theme_name      TEXT NOT NULL,
+    verse_id        INTEGER,
+    verse_ref       TEXT NOT NULL,
+    verse_text      TEXT NOT NULL,
+    cta             TEXT NOT NULL,
+    description     TEXT NOT NULL,
+    hashtags        TEXT NOT NULL,
+    status          TEXT NOT NULL DEFAULT 'pending',
+    prayer_id       INTEGER REFERENCES prayers(id),
+    video_id        INTEGER REFERENCES generated_videos(id),
+    video_path      TEXT,
+    created_at      TEXT NOT NULL,
+    updated_at      TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_lineup_entries_status ON lineup_entries(status);
 """

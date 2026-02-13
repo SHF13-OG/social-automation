@@ -1089,5 +1089,391 @@ def list_queue_cmd(
     console.print(table)
 
 
+# ---------------------------------------------------------------------------
+# Combined daily workflow: generate-daily + preview-lineup
+# ---------------------------------------------------------------------------
+
+DEFAULT_HASHTAGS = "#faith #prayer #ChristianTikTok #over45 #inspiration"
+
+
+@app.command("generate-daily")
+def generate_daily_cmd(
+    theme: str = typer.Option(
+        None, "--theme", "-t", help="Theme slug (e.g. grief). Auto-picks if omitted."
+    ),
+    model: str = typer.Option(
+        "gpt-4o-mini", "--model", help="OpenAI model for prayer generation."
+    ),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Preview only; don't generate media."
+    ),
+    cta: str = typer.Option(
+        None, "--cta", help="Custom CTA text for the video overlay."
+    ),
+    hashtags: str = typer.Option(
+        None, "--hashtags", help="Override hashtags (space-separated, e.g. '#faith #prayer')."
+    ),
+    from_lineup: bool = typer.Option(
+        False, "--from-lineup", help="Read next pending entry from lineup_entries table."
+    ),
+) -> None:
+    """Generate content and compose a TikTok video in one step."""
+    from src.content.prayers import (
+        generate_prayer_text,
+        generate_prayer_text_fallback,
+        save_prayer,
+    )
+    from src.content.themes import pick_theme
+    from src.content.verses import mark_verse_used, pick_verse
+    from src.db import connect as db_connect
+    from src.db import init_schema, now_utc
+
+    db_path = get_db_path()
+    conn = db_connect(db_path)
+    init_schema(conn)
+
+    lineup_entry_id: int | None = None
+
+    # Read overrides from lineup_entries table if requested
+    if from_lineup:
+        row = conn.execute(
+            "SELECT * FROM lineup_entries WHERE status = 'pending' ORDER BY post_number LIMIT 1"
+        ).fetchone()
+
+        if row is None:
+            conn.close()
+            console.print(
+                "[yellow]No pending lineup entries.[/yellow] "
+                "Run: python -m src.main preview-lineup --count 7"
+            )
+            raise typer.Exit(code=0)
+
+        lineup_entry_id = row["id"]
+        # Apply lineup overrides (CLI flags take priority)
+        theme = theme or row["theme_slug"]
+        cta = cta or row["cta"]
+        hashtags = hashtags or row["hashtags"]
+        console.print(
+            f"[bold]From lineup:[/bold] post {row['post_number']} "
+            f"— {row['theme_name']}"
+        )
+
+    # 1. Pick theme
+    chosen_theme = pick_theme(conn, slug=theme)
+    if chosen_theme is None:
+        conn.close()
+        if theme:
+            console.print(f"[red]Theme '{theme}' not found or inactive.[/red]")
+        else:
+            console.print("[red]No active themes available.[/red]")
+        raise typer.Exit(code=1)
+
+    console.print(
+        f"[bold]Theme:[/bold] {chosen_theme['name']} ({chosen_theme['slug']})"
+    )
+
+    # 2. Pick verse
+    verse = pick_verse(conn, chosen_theme["id"])
+    if verse is None:
+        conn.close()
+        console.print(
+            f"[red]No verses found for theme '{chosen_theme['slug']}'.[/red] "
+            "Run: python -m src.main import-verses"
+        )
+        raise typer.Exit(code=1)
+
+    console.print(f"[bold]Verse:[/bold] {verse['reference']}")
+    console.print(f"  {verse['text']}")
+
+    # 3. Generate prayer
+    console.print("\n[bold]Generating prayer...[/bold]")
+    ai_model_used: str | None = None
+    try:
+        prayer_text = generate_prayer_text(verse, chosen_theme, model=model)
+        ai_model_used = model
+        console.print(f"  (via OpenAI {model})")
+    except RuntimeError as exc:
+        console.print(f"  [yellow]{exc}[/yellow]")
+        console.print("  Using template fallback.")
+        prayer_text = generate_prayer_text_fallback(verse, chosen_theme)
+        ai_model_used = "fallback-template"
+
+    word_count = len(prayer_text.split())
+    console.print(f"\n[bold]Prayer ({word_count} words):[/bold]")
+    console.print(prayer_text)
+
+    # Show hashtags
+    post_hashtags = hashtags or DEFAULT_HASHTAGS
+    console.print(f"\n[bold]Hashtags:[/bold] {post_hashtags}")
+    if cta:
+        console.print(f"[bold]CTA:[/bold] {cta}")
+
+    if dry_run:
+        console.print("\n[yellow]--dry-run: nothing saved or generated.[/yellow]")
+        conn.close()
+        return
+
+    # 4. Save prayer
+    prayer_id = save_prayer(
+        conn, verse["id"], chosen_theme["id"], prayer_text, ai_model_used
+    )
+    mark_verse_used(conn, verse["id"])
+    console.print(f"\n[bold]Saved:[/bold] prayer_id={prayer_id}")
+
+    # 5. Generate audio
+    console.print("\n[bold]Step 1:[/bold] Generating audio...")
+    from src.media.tts import generate_audio, save_audio_record
+
+    try:
+        audio_info = generate_audio(prayer_id, prayer_text, db_path)
+        audio_id = save_audio_record(conn, prayer_id, audio_info)
+        console.print(f"  Audio saved: {audio_info['file_path']}")
+    except RuntimeError as exc:
+        conn.close()
+        console.print(f"  [red]{exc}[/red]")
+        raise typer.Exit(code=1)
+
+    # 6. Fetch stock footage
+    console.print("\n[bold]Step 2:[/bold] Searching for stock footage...")
+    from src.media.footage import (
+        download_clip,
+        save_footage_record,
+        search_footage,
+    )
+
+    keywords = json.loads(chosen_theme["keywords"]) if chosen_theme["keywords"] else []
+    if not keywords:
+        keywords = [chosen_theme["name"]]
+
+    try:
+        clips = search_footage(keywords, db_path, max_results=2)
+    except RuntimeError as exc:
+        conn.close()
+        console.print(f"  [red]{exc}[/red]")
+        raise typer.Exit(code=1)
+
+    if not clips:
+        conn.close()
+        console.print("  [red]No footage found. Check API keys.[/red]")
+        raise typer.Exit(code=1)
+
+    footage_paths: list[str] = []
+    footage_ids: list[int] = []
+    for clip in clips:
+        dl_path = download_clip(clip, chosen_theme["slug"])
+        fid = save_footage_record(
+            conn, clip, str(dl_path), chosen_theme["id"], keywords
+        )
+        footage_paths.append(str(dl_path))
+        footage_ids.append(fid)
+        console.print(f"  Downloaded: {dl_path.name}")
+
+    # 7. Compose video
+    console.print("\n[bold]Step 3:[/bold] Composing video with FFmpeg...")
+    from src.media.compositor import compose_video, save_video_record
+
+    try:
+        video_info = compose_video(
+            audio_path=audio_info["file_path"],
+            footage_paths=footage_paths,
+            verse_ref=verse["reference"],
+            verse_text=verse["text"],
+            prayer_id=prayer_id,
+            prayer_text=prayer_text,
+            theme_slug=chosen_theme["slug"],
+            db_path=db_path,
+            cta_override=cta,
+        )
+        video_id = save_video_record(
+            conn, prayer_id, audio_id, footage_ids, video_info, db_path
+        )
+        console.print(f"  Video: {video_info['file_path']}")
+        console.print(f"  Duration: {video_info['duration_sec']:.1f}s")
+        console.print(
+            f"  Size: {video_info['file_size_bytes'] / 1024 / 1024:.1f} MB"
+        )
+        console.print(f"\n[bold]Done![/bold] video_id={video_id}")
+    except RuntimeError as exc:
+        conn.close()
+        console.print(f"  [red]{exc}[/red]")
+        raise typer.Exit(code=1)
+
+    # 8. Mark lineup entry as generated in SQLite
+    if lineup_entry_id is not None:
+        conn.execute(
+            """
+            UPDATE lineup_entries
+            SET status = 'generated', prayer_id = ?, video_id = ?,
+                video_path = ?, updated_at = ?
+            WHERE id = ?
+            """,
+            (prayer_id, video_id, video_info["file_path"], now_utc(), lineup_entry_id),
+        )
+        conn.commit()
+        console.print(
+            f"  Lineup entry {lineup_entry_id} marked as generated."
+        )
+
+    conn.close()
+
+
+@app.command("preview-lineup")
+def preview_lineup_cmd(
+    count: int = typer.Option(
+        7, "--count", "-n", help="Number of upcoming posts to preview."
+    ),
+    show: bool = typer.Option(
+        False, "--show", help="Display the current lineup from the database."
+    ),
+) -> None:
+    """Preview and save the next N posts to the lineup_entries table."""
+    from src.content.themes import pick_theme
+    from src.content.verses import pick_verse
+    from src.db import connect as db_connect
+    from src.db import init_schema, now_utc
+    from src.media.text_overlay import THEME_CTAS
+
+    db_path = get_db_path()
+    conn = db_connect(db_path)
+    init_schema(conn)
+
+    if show:
+        # Display existing lineup from DB
+        rows = conn.execute(
+            "SELECT * FROM lineup_entries ORDER BY post_number"
+        ).fetchall()
+        conn.close()
+
+        if not rows:
+            console.print(
+                "[yellow]No lineup entries in database.[/yellow]\n"
+                "Run: python -m src.main preview-lineup --count 7"
+            )
+            return
+
+        table = Table(title="Upcoming Posts Lineup")
+        table.add_column("#", justify="right")
+        table.add_column("Theme")
+        table.add_column("Verse")
+        table.add_column("CTA", overflow="fold")
+        table.add_column("Hashtags", overflow="fold")
+        table.add_column("Status", justify="center")
+
+        for row in rows:
+            table.add_row(
+                str(row["post_number"]),
+                row["theme_name"],
+                row["verse_ref"],
+                (row["cta"] or "")[:50],
+                (row["hashtags"] or "")[:40],
+                row["status"],
+            )
+
+        console.print(table)
+        return
+
+    # Generate new lineup by simulating rotation
+    lineup: list[dict[str, Any]] = []
+    used_verse_ids: set[int] = set()
+
+    for i in range(1, count + 1):
+        chosen_theme = pick_theme(conn)
+        if chosen_theme is None:
+            console.print(f"[yellow]Ran out of themes at post {i}.[/yellow]")
+            break
+
+        verse = pick_verse(conn, chosen_theme["id"])
+        if verse is None:
+            console.print(
+                f"[yellow]No verses for theme '{chosen_theme['slug']}' at post {i}.[/yellow]"
+            )
+            continue
+
+        # Skip already-used verses in this lineup to simulate rotation
+        if verse["id"] in used_verse_ids:
+            pass
+        used_verse_ids.add(verse["id"])
+
+        cta_text = THEME_CTAS.get(
+            chosen_theme["slug"], "Share your prayer in the comments"
+        )
+        description = f"{verse['reference']} | {chosen_theme['name']}"
+
+        lineup.append({
+            "post_number": i,
+            "theme_id": chosen_theme["id"],
+            "theme_slug": chosen_theme["slug"],
+            "theme_name": chosen_theme["name"],
+            "verse_id": verse["id"],
+            "verse_ref": verse["reference"],
+            "verse_text": verse["text"],
+            "cta": cta_text,
+            "description": description,
+            "hashtags": DEFAULT_HASHTAGS,
+        })
+
+    if not lineup:
+        conn.close()
+        console.print("[red]Could not build any lineup entries.[/red]")
+        raise typer.Exit(code=1)
+
+    # Clear existing pending entries and insert new ones
+    now = now_utc()
+    with conn:
+        conn.execute("DELETE FROM lineup_entries WHERE status = 'pending'")
+        for entry in lineup:
+            conn.execute(
+                """
+                INSERT INTO lineup_entries (
+                    post_number, theme_id, theme_slug, theme_name,
+                    verse_id, verse_ref, verse_text,
+                    cta, description, hashtags,
+                    status, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+                """,
+                (
+                    entry["post_number"],
+                    entry["theme_id"],
+                    entry["theme_slug"],
+                    entry["theme_name"],
+                    entry["verse_id"],
+                    entry["verse_ref"],
+                    entry["verse_text"],
+                    entry["cta"],
+                    entry["description"],
+                    entry["hashtags"],
+                    now,
+                    now,
+                ),
+            )
+
+    conn.close()
+
+    console.print(f"[bold]Saved lineup:[/bold] {len(lineup)} posts to database")
+
+    # Display as table
+    table = Table(title="Upcoming Posts Lineup")
+    table.add_column("#", justify="right")
+    table.add_column("Theme")
+    table.add_column("Verse")
+    table.add_column("CTA", overflow="fold")
+    table.add_column("Description", overflow="fold")
+
+    for entry in lineup:
+        table.add_row(
+            str(entry["post_number"]),
+            entry["theme_name"],
+            entry["verse_ref"],
+            entry["cta"][:50],
+            entry["description"],
+        )
+
+    console.print(table)
+    console.print(
+        "\n[dim]Edit entries in the admin at /admin/lineup, "
+        "then run: python -m src.main generate-daily --from-lineup[/dim]"
+    )
+
+
 if __name__ == "__main__":
     app()

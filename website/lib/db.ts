@@ -364,6 +364,90 @@ export function updateTheme(id: number, updates: { description?: string; is_acti
   }
 }
 
+// Lineup entry helpers
+export interface LineupEntry {
+  id: number
+  post_number: number
+  theme_slug: string
+  theme_name: string
+  verse_ref: string
+  verse_text: string
+  cta: string
+  description: string
+  hashtags: string
+  status: string          // pending | generated | approved | uploaded
+  prayer_id: number | null
+  video_id: number | null
+  video_path: string | null
+  created_at: string
+  updated_at: string
+}
+
+export function getLineupEntries(status?: string): LineupEntry[] {
+  try {
+    if (status) {
+      return runQuery<LineupEntry>(
+        `SELECT * FROM lineup_entries WHERE status = ? ORDER BY post_number`,
+        [status]
+      )
+    }
+    return runQuery<LineupEntry>(
+      `SELECT * FROM lineup_entries ORDER BY post_number`
+    )
+  } catch (error) {
+    console.error('Error getting lineup entries:', error)
+    return []
+  }
+}
+
+export function updateLineupEntry(
+  id: number,
+  updates: { cta?: string; description?: string; hashtags?: string; status?: string }
+) {
+  if (!db) throw new Error('Database not available')
+
+  const setClauses: string[] = []
+  const values: any[] = []
+
+  if (updates.cta !== undefined) {
+    setClauses.push('cta = ?')
+    values.push(updates.cta)
+  }
+  if (updates.description !== undefined) {
+    setClauses.push('description = ?')
+    values.push(updates.description)
+  }
+  if (updates.hashtags !== undefined) {
+    setClauses.push('hashtags = ?')
+    values.push(updates.hashtags)
+  }
+  if (updates.status !== undefined) {
+    setClauses.push('status = ?')
+    values.push(updates.status)
+  }
+
+  if (setClauses.length === 0) return
+
+  setClauses.push('updated_at = ?')
+  values.push(new Date().toISOString())
+  values.push(id)
+
+  db.run(
+    `UPDATE lineup_entries SET ${setClauses.join(', ')} WHERE id = ?`,
+    values
+  )
+}
+
+export function saveDb() {
+  if (!db) throw new Error('Database not available')
+  const fs = require('fs')
+  const path = require('path')
+  const data = db.export()
+  const buffer = Buffer.from(data)
+  const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), '..', 'data', 'social.db')
+  fs.writeFileSync(DB_PATH, buffer)
+}
+
 // Type definitions
 export interface QueueItem {
   id: number

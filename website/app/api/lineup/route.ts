@@ -1,24 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSession } from '@/lib/session'
-import { ensureDb, getRecentPrayers, updatePrayerText, saveDb } from '@/lib/db'
+import { ensureDb, getLineupEntries, updateLineupEntry, saveDb } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await getSession()
-
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   await ensureDb()
-  const prayers = getRecentPrayers(50)
-  return NextResponse.json(prayers)
+
+  const { searchParams } = new URL(request.url)
+  const status = searchParams.get('status') || undefined
+
+  const entries = getLineupEntries(status)
+  return NextResponse.json(entries)
 }
 
 export async function PUT(request: NextRequest) {
   const session = await getSession()
-
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -27,20 +29,20 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json()
-    const { prayer_id, prayer_text } = body
+    const { id, ...updates } = body
 
-    if (!prayer_id || !prayer_text) {
-      return NextResponse.json({ error: 'Missing prayer_id or prayer_text' }, { status: 400 })
+    if (!id) {
+      return NextResponse.json({ error: 'Missing id' }, { status: 400 })
     }
 
-    updatePrayerText(prayer_id, prayer_text)
+    updateLineupEntry(id, updates)
     saveDb()
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error updating prayer:', error)
+    console.error('Error updating lineup entry:', error)
     return NextResponse.json(
-      { error: 'Failed to update prayer' },
+      { error: 'Failed to update lineup entry' },
       { status: 500 }
     )
   }
