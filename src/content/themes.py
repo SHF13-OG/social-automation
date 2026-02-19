@@ -10,7 +10,7 @@ from typing import Any
 def get_active_themes(conn: sqlite3.Connection) -> list[dict[str, Any]]:
     """Return all active themes as dicts."""
     cur = conn.execute(
-        "SELECT id, slug, name, description, keywords, tone "
+        "SELECT id, slug, name, description, keywords, tone, voice_id, hook "
         "FROM themes WHERE is_active = 1 ORDER BY slug"
     )
     return [dict(row) for row in cur.fetchall()]
@@ -21,7 +21,7 @@ def get_theme_by_slug(
 ) -> dict[str, Any] | None:
     """Fetch a single theme by slug, or None if not found."""
     cur = conn.execute(
-        "SELECT id, slug, name, description, keywords, tone, is_active "
+        "SELECT id, slug, name, description, keywords, tone, is_active, voice_id, hook "
         "FROM themes WHERE slug = ?",
         (slug,),
     )
@@ -49,7 +49,7 @@ def pick_theme(
     # (themes with no usage history sort first → freshest).
     cur = conn.execute(
         """
-        SELECT t.id, t.slug, t.name, t.description, t.keywords, t.tone,
+        SELECT t.id, t.slug, t.name, t.description, t.keywords, t.tone, t.voice_id, t.hook,
                MAX(bv.last_used_at) AS latest_use
         FROM themes t
         LEFT JOIN bible_verses bv ON bv.theme_id = t.id

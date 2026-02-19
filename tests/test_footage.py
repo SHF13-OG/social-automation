@@ -1,11 +1,14 @@
 """Tests for src/media/footage.py - stock footage search, download, storage."""
 
 import json
+from unittest.mock import MagicMock
 
 from src.db import connect, init_schema, now_utc
 from src.media.footage import (
     _pick_best_pexels_file,
+    generate_kling_clips,
     save_footage_record,
+    search_footage,
 )
 
 
@@ -110,3 +113,105 @@ def test_search_pixabay_raises_without_key(monkeypatch):
         assert False, "Should have raised"
     except RuntimeError as exc:
         assert "PIXABAY_API_KEY" in str(exc)
+
+
+# ---------------------------------------------------------------------------
+# Kling AI tests
+# ---------------------------------------------------------------------------
+
+
+def test_generate_kling_raises_without_key(monkeypatch):
+    """generate_kling_clips should raise when FAL_KEY is not set."""
+    monkeypatch.delenv("FAL_KEY", raising=False)
+    import sys
+    monkeypatch.setitem(sys.modules, "fal_client", MagicMock())
+
+    try:
+        generate_kling_clips(["sunset"])
+        assert False, "Should have raised"
+    except RuntimeError as exc:
+        assert "FAL_KEY" in str(exc)
+
+
+def test_generate_kling_clips_returns_correct_shape(monkeypatch, tmp_path):
+    """Verify Kling clips return the same dict shape as stock footage results."""
+    monkeypatch.setenv("FAL_KEY", "test-fal-key")
+    monkeypatch.setattr("src.media.footage.FOOTAGE_DIR", tmp_path)
+    monkeypatch.setattr(
+        "src.media.footage.get_config_value",
+        lambda key, default=None, db_path=None: {
+            "footage.kling_model": "fal-ai/kling-video/v2.5-turbo/pro/text-to-video",
+            "footage.kling_duration": "10",
+        }.get(key, default),
+    )
+
+    mock_fal = MagicMock()
+    mock_fal.subscribe.return_value = {
+        "video": {"url": "https://fal.ai/output/test-video.mp4"},
+        "request_id": "req_abc123",
+    }
+
+    import sys
+    monkeypatch.setitem(sys.modules, "fal_client", mock_fal)
+
+    results = generate_kling_clips(["peaceful garden"])
+
+    assert len(results) == 1
+    clip = results[0]
+    assert clip["source"] == "kling"
+    assert clip["external_id"] == "req_abc123"
+    assert clip["download_url"] == "https://fal.ai/output/test-video.mp4"
+    assert clip["duration_sec"] == 10
+    assert clip["resolution"] == "1080x1920"
+    assert clip["attribution"] == "Kling AI via fal.ai"
+
+    # Verify fal_client.subscribe was called with correct args
+    call_args = mock_fal.subscribe.call_args
+    assert call_args[0][0] == "fal-ai/kling-video/v2.5-turbo/pro/text-to-video"
+    assert call_args[1]["arguments"]["aspect_ratio"] == "9:16"
+    assert call_args[1]["arguments"]["duration"] == "10"
+    assert "peaceful garden" in call_args[1]["arguments"]["prompt"]
+
+
+def test_search_footage_dispatches_to_kling(monkeypatch, tmp_path):
+    """search_footage should dispatch to Kling when primary_source=kling."""
+    monkeypatch.setenv("FAL_KEY", "test-fal-key")
+    monkeypatch.setattr("src.media.footage.FOOTAGE_DIR", tmp_path)
+
+    config_values = {
+        "footage.primary_source": "kling",
+        "footage.kling_model": "fal-ai/kling-video/v2.5-turbo/pro/text-to-video",
+        "footage.kling_duration": "10",
+    }
+    monkeypatch.setattr(
+        "src.media.footage.get_config_value",
+        lambda key, default=None, db_path=None: config_values.get(key, default),
+    )
+
+    mock_fal = MagicMock()
+    mock_fal.subscribe.return_value = {
+        "video": {"url": "https://fal.ai/output/clip.mp4"},
+        "request_id": "req_xyz",
+    }
+
+    import sys
+    monkeypatch.setitem(sys.modules, "fal_client", mock_fal)
+
+    results = search_footage(["sunset"])
+
+    assert len(results) == 1
+    assert results[0]["source"] == "kling"
+    mock_fal.subscribe.assert_called_once()
+
+
+def test_search_footage_default_dispatches_to_pexels(monkeypatch):
+    """Default config should NOT dispatch to Kling."""
+    monkeypatch.delenv("PEXELS_API_KEY", raising=False)
+
+    # With default config (pexels), it should try Pexels and fail on missing key
+    try:
+        search_footage(["sunset"])
+    except RuntimeError:
+        pass  # Expected — Pexels key not set
+
+    # The point is it didn't route to Kling

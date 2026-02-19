@@ -1,252 +1,518 @@
-# Bible Verses Mapped to Themes
+# Bible Verses Mapped to Hook Themes
 # Translation: ESV (English Standard Version) unless noted
-# Each theme should have 10+ verses for rotation variety
+# Scripture quotations from the ESV Bible, copyright 2001 by Crossway.
 
 verses:
-  # --- Grief & Loss ---
-  - reference: "Psalm 23:4"
-    text: "Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me; your rod and your staff, they comfort me."
-    translation: "ESV"
-    theme: grief
-    tone: comforting
-
-  - reference: "Revelation 21:4"
-    text: "He will wipe away every tear from their eyes, and death shall be no more, neither shall there be mourning, nor crying, nor pain anymore, for the former things have passed away."
-    translation: "ESV"
-    theme: grief
-    tone: comforting
-
-  - reference: "Psalm 34:18"
-    text: "The Lord is near to the brokenhearted and saves the crushed in spirit."
-    translation: "ESV"
-    theme: grief
-    tone: comforting
-
-  - reference: "2 Corinthians 1:3-4"
-    text: "Blessed be the God and Father of our Lord Jesus Christ, the Father of mercies and God of all comfort, who comforts us in all our affliction."
-    translation: "ESV"
-    theme: grief
-    tone: comforting
-
-  - reference: "Matthew 5:4"
-    text: "Blessed are those who mourn, for they shall be comforted."
-    translation: "ESV"
-    theme: grief
-    tone: comforting
-
-  # --- Retirement & New Seasons ---
-  - reference: "Isaiah 46:4"
-    text: "Even to your old age I am he, and to gray hairs I will carry you. I have made, and I will bear; I will carry and will save."
-    translation: "ESV"
-    theme: retirement
-    tone: encouraging
-
+  # --- Wedding Joy ---
   - reference: "Jeremiah 29:11"
     text: "For I know the plans I have for you, declares the Lord, plans for welfare and not for evil, to give you a future and a hope."
     translation: "ESV"
-    theme: retirement
-    tone: encouraging
+    theme: wedding-joy
+    tone: joyful
 
-  - reference: "Psalm 92:14"
-    text: "They still bear fruit in old age; they are ever full of sap and green."
+  - reference: "Genesis 2:24"
+    text: "Therefore a man shall leave his father and his mother and hold fast to his wife, and they shall become one flesh."
     translation: "ESV"
-    theme: retirement
-    tone: encouraging
+    theme: wedding-joy
+    tone: joyful
+
+  - reference: "Ecclesiastes 4:9-10"
+    text: "Two are better than one, because they have a good reward for their toil. For if they fall, one will lift up his fellow."
+    translation: "ESV"
+    theme: wedding-joy
+    tone: joyful
+
+  - reference: "1 Corinthians 13:4-5"
+    text: "Love is patient and kind; love does not envy or boast; it is not arrogant or rude. It does not insist on its own way; it is not irritable or resentful."
+    translation: "ESV"
+    theme: wedding-joy
+    tone: joyful
+
+  - reference: "Ruth 1:16"
+    text: "But Ruth said, 'Do not urge me to leave you or to return from following you. For where you go I will go, and where you lodge I will lodge. Your people shall be my people, and your God my God.'"
+    translation: "ESV"
+    theme: wedding-joy
+    tone: joyful
+
+  # --- Financial Worry ---
+  - reference: "Philippians 4:19"
+    text: "And my God will supply every need of yours according to his riches in glory in Christ Jesus."
+    translation: "ESV"
+    theme: money-worry
+    tone: reassuring
+
+  - reference: "Matthew 6:26"
+    text: "Look at the birds of the air: they neither sow nor reap nor gather into barns, and yet your heavenly Father feeds them. Are you not of more value than they?"
+    translation: "ESV"
+    theme: money-worry
+    tone: reassuring
+
+  - reference: "Proverbs 3:9-10"
+    text: "Honor the Lord with your wealth and with the firstfruits of all your produce; then your barns will be filled with plenty, and your vats will be bursting with wine."
+    translation: "ESV"
+    theme: money-worry
+    tone: reassuring
+
+  - reference: "Matthew 6:33"
+    text: "But seek first the kingdom of God and his righteousness, and all these things will be added to you."
+    translation: "ESV"
+    theme: money-worry
+    tone: reassuring
+
+  - reference: "Psalm 37:25"
+    text: "I have been young, and now am old, yet I have not seen the righteous forsaken or his children begging for bread."
+    translation: "ESV"
+    theme: money-worry
+    tone: reassuring
+
+  # --- Closer to Jesus ---
+  - reference: "James 4:8"
+    text: "Draw near to God, and he will draw near to you."
+    translation: "ESV"
+    theme: closer-to-jesus
+    tone: inviting
+
+  - reference: "Psalm 42:1-2"
+    text: "As a deer pants for flowing streams, so pants my soul for you, O God. My soul thirsts for God, for the living God."
+    translation: "ESV"
+    theme: closer-to-jesus
+    tone: inviting
+
+  - reference: "John 15:5"
+    text: "I am the vine; you are the branches. Whoever abides in me and I in him, he it is that bears much fruit, for apart from me you can do nothing."
+    translation: "ESV"
+    theme: closer-to-jesus
+    tone: inviting
+
+  - reference: "Philippians 3:8"
+    text: "Indeed, I count everything as loss because of the surpassing worth of knowing Christ Jesus my Lord."
+    translation: "ESV"
+    theme: closer-to-jesus
+    tone: inviting
+
+  - reference: "Revelation 3:20"
+    text: "Behold, I stand at the door and knock. If anyone hears my voice and opens the door, I will come in to him and eat with him, and he with me."
+    translation: "ESV"
+    theme: closer-to-jesus
+    tone: inviting
+
+  # --- Empty Nest ---
+  - reference: "Psalm 113:9"
+    text: "He gives the barren woman a home, making her the joyous mother of children. Praise the Lord!"
+    translation: "ESV"
+    theme: empty-nest
+    tone: comforting
+
+  - reference: "Isaiah 54:2"
+    text: "Enlarge the place of your tent, and let the curtains of your habitations be stretched out; do not hold back; lengthen your cords and strengthen your stakes."
+    translation: "ESV"
+    theme: empty-nest
+    tone: comforting
+
+  - reference: "Psalm 30:5"
+    text: "For his anger is but for a moment, and his favor is for a lifetime. Weeping may tarry for the night, but joy comes with the morning."
+    translation: "ESV"
+    theme: empty-nest
+    tone: comforting
+
+  - reference: "Isaiah 43:19"
+    text: "Behold, I am doing a new thing; now it springs forth, do you not perceive it? I will make a way in the wilderness and rivers in the desert."
+    translation: "ESV"
+    theme: empty-nest
+    tone: comforting
 
   - reference: "Ecclesiastes 3:1"
     text: "For everything there is a season, and a time for every matter under heaven."
     translation: "ESV"
-    theme: retirement
-    tone: encouraging
+    theme: empty-nest
+    tone: comforting
 
-  - reference: "Philippians 1:6"
-    text: "And I am sure of this, that he who began a good work in you will bring it to completion at the day of Jesus Christ."
-    translation: "ESV"
-    theme: retirement
-    tone: encouraging
-
-  # --- Health Challenges ---
+  # --- Health Battle (remapped from health) ---
   - reference: "2 Corinthians 12:9"
     text: "But he said to me, 'My grace is sufficient for you, for my power is made perfect in weakness.' Therefore I will boast all the more gladly of my weaknesses, so that the power of Christ may rest upon me."
     translation: "ESV"
-    theme: health
+    theme: health-scare
     tone: hopeful
 
   - reference: "Isaiah 41:10"
     text: "Fear not, for I am with you; be not dismayed, for I am your God; I will strengthen you, I will help you, I will uphold you with my righteous right hand."
     translation: "ESV"
-    theme: health
+    theme: health-scare
     tone: hopeful
 
   - reference: "Psalm 73:26"
     text: "My flesh and my heart may fail, but God is the strength of my heart and my portion forever."
     translation: "ESV"
-    theme: health
+    theme: health-scare
     tone: hopeful
 
   - reference: "James 5:14-15"
     text: "Is anyone among you sick? Let him call for the elders of the church, and let them pray over him. And the prayer of faith will save the one who is sick, and the Lord will raise him up."
     translation: "ESV"
-    theme: health
+    theme: health-scare
     tone: hopeful
 
   - reference: "Psalm 147:3"
     text: "He heals the brokenhearted and binds up their wounds."
     translation: "ESV"
-    theme: health
+    theme: health-scare
     tone: hopeful
 
-  # --- Faith Questions & Doubts ---
-  - reference: "Mark 9:24"
-    text: "Immediately the father of the child cried out and said, 'I believe; help my unbelief!'"
+  # --- Losing a Loved One (remapped from grief) ---
+  - reference: "Psalm 23:4"
+    text: "Even though I walk through the valley of the shadow of death, I will fear no evil, for you are with me; your rod and your staff, they comfort me."
     translation: "ESV"
-    theme: faith-doubts
-    tone: reassuring
+    theme: losing-loved-one
+    tone: comforting
 
-  - reference: "Proverbs 3:5-6"
-    text: "Trust in the Lord with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths."
+  - reference: "Revelation 21:4"
+    text: "He will wipe away every tear from their eyes, and death shall be no more, neither shall there be mourning, nor crying, nor pain anymore, for the former things have passed away."
     translation: "ESV"
-    theme: faith-doubts
-    tone: reassuring
+    theme: losing-loved-one
+    tone: comforting
 
-  - reference: "Hebrews 11:1"
-    text: "Now faith is the assurance of things hoped for, the conviction of things not seen."
+  - reference: "Psalm 34:18"
+    text: "The Lord is near to the brokenhearted and saves the crushed in spirit."
     translation: "ESV"
-    theme: faith-doubts
-    tone: reassuring
+    theme: losing-loved-one
+    tone: comforting
 
-  - reference: "Romans 8:28"
-    text: "And we know that for those who love God all things work together for good, for those who are called according to his purpose."
+  - reference: "2 Corinthians 1:3-4"
+    text: "Blessed be the God and Father of our Lord Jesus Christ, the Father of mercies and God of all comfort, who comforts us in all our affliction."
     translation: "ESV"
-    theme: faith-doubts
-    tone: reassuring
+    theme: losing-loved-one
+    tone: comforting
 
-  - reference: "Psalm 46:10"
-    text: "Be still, and know that I am God. I will be exalted among the nations, I will be exalted in the earth!"
+  - reference: "Matthew 5:4"
+    text: "Blessed are those who mourn, for they shall be comforted."
     translation: "ESV"
-    theme: faith-doubts
-    tone: reassuring
+    theme: losing-loved-one
+    tone: comforting
 
-  # --- Parenting Adult Children ---
-  - reference: "Proverbs 22:6"
-    text: "Train up a child in the way he should go; even when he is old he will not depart from it."
-    translation: "ESV"
-    theme: adult-children
-    tone: peaceful
-
-  - reference: "Isaiah 54:13"
-    text: "All your children shall be taught by the Lord, and great shall be the peace of your children."
-    translation: "ESV"
-    theme: adult-children
-    tone: peaceful
-
-  - reference: "3 John 1:4"
-    text: "I have no greater joy than to hear that my children are walking in the truth."
-    translation: "ESV"
-    theme: adult-children
-    tone: peaceful
-
-  - reference: "Psalm 127:3"
-    text: "Behold, children are a heritage from the Lord, the fruit of the womb a reward."
-    translation: "ESV"
-    theme: adult-children
-    tone: peaceful
-
-  - reference: "Philippians 4:6-7"
-    text: "Do not be anxious about anything, but in everything by prayer and supplication with thanksgiving let your requests be made known to God. And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus."
-    translation: "ESV"
-    theme: adult-children
-    tone: peaceful
-
-  # --- Marriage After 25+ Years ---
-  - reference: "Ecclesiastes 4:9-10"
-    text: "Two are better than one, because they have a good reward for their toil. For if they fall, one will lift up his fellow."
-    translation: "ESV"
-    theme: marriage-renewal
-    tone: loving
-
+  # --- Marriage Feels Distant (remapped from marriage-renewal) ---
   - reference: "1 Corinthians 13:7"
     text: "Love bears all things, believes all things, hopes all things, endures all things."
     translation: "ESV"
-    theme: marriage-renewal
+    theme: marriage-distance
     tone: loving
 
   - reference: "Song of Solomon 8:7"
     text: "Many waters cannot quench love, neither can floods drown it."
     translation: "ESV"
-    theme: marriage-renewal
+    theme: marriage-distance
     tone: loving
 
   - reference: "Colossians 3:14"
     text: "And above all these put on love, which binds everything together in perfect harmony."
     translation: "ESV"
-    theme: marriage-renewal
+    theme: marriage-distance
     tone: loving
 
   - reference: "Ephesians 5:25"
     text: "Husbands, love your wives, as Christ loved the church and gave himself up for her."
     translation: "ESV"
-    theme: marriage-renewal
+    theme: marriage-distance
     tone: loving
 
-  # --- Legacy & Eternal Purpose ---
+  - reference: "1 Peter 4:8"
+    text: "Above all, keep loving one another earnestly, since love covers a multitude of sins."
+    translation: "ESV"
+    theme: marriage-distance
+    tone: loving
+
+  # --- Caring for Aging Parents ---
+  - reference: "Exodus 20:12"
+    text: "Honor your father and your mother, that your days may be long in the land that the Lord your God is giving you."
+    translation: "ESV"
+    theme: caring-for-parents
+    tone: strengthening
+
+  - reference: "Galatians 6:9"
+    text: "And let us not grow weary of doing good, for in due season we will reap, if we do not give up."
+    translation: "ESV"
+    theme: caring-for-parents
+    tone: strengthening
+
+  - reference: "Isaiah 40:31"
+    text: "But they who wait for the Lord shall renew their strength; they shall mount up with wings like eagles; they shall run and not be weary; they shall walk and not faint."
+    translation: "ESV"
+    theme: caring-for-parents
+    tone: strengthening
+
+  - reference: "Psalm 46:1"
+    text: "God is our refuge and strength, a very present help in trouble."
+    translation: "ESV"
+    theme: caring-for-parents
+    tone: strengthening
+
+  - reference: "1 Timothy 5:4"
+    text: "But if a widow has children or grandchildren, let them first learn to show godliness to their own household and to make some return to their parents, for this is pleasing in the sight of God."
+    translation: "ESV"
+    theme: caring-for-parents
+    tone: strengthening
+
+  # --- Child Making Hard Choices (remapped from adult-children) ---
+  - reference: "Proverbs 22:6"
+    text: "Train up a child in the way he should go; even when he is old he will not depart from it."
+    translation: "ESV"
+    theme: child-struggles
+    tone: peaceful
+
+  - reference: "Isaiah 54:13"
+    text: "All your children shall be taught by the Lord, and great shall be the peace of your children."
+    translation: "ESV"
+    theme: child-struggles
+    tone: peaceful
+
+  - reference: "3 John 1:4"
+    text: "I have no greater joy than to hear that my children are walking in the truth."
+    translation: "ESV"
+    theme: child-struggles
+    tone: peaceful
+
+  - reference: "Psalm 127:3"
+    text: "Behold, children are a heritage from the Lord, the fruit of the womb a reward."
+    translation: "ESV"
+    theme: child-struggles
+    tone: peaceful
+
+  - reference: "Philippians 4:6-7"
+    text: "Do not be anxious about anything, but in everything by prayer and supplication with thanksgiving let your requests be made known to God. And the peace of God, which surpasses all understanding, will guard your hearts and your minds in Christ Jesus."
+    translation: "ESV"
+    theme: child-struggles
+    tone: peaceful
+
+  # --- Retirement & Purpose (remapped from retirement) ---
+  - reference: "Isaiah 46:4"
+    text: "Even to your old age I am he, and to gray hairs I will carry you. I have made, and I will bear; I will carry and will save."
+    translation: "ESV"
+    theme: retirement-purpose
+    tone: encouraging
+
+  - reference: "Psalm 92:14"
+    text: "They still bear fruit in old age; they are ever full of sap and green."
+    translation: "ESV"
+    theme: retirement-purpose
+    tone: encouraging
+
+  - reference: "Philippians 1:6"
+    text: "And I am sure of this, that he who began a good work in you will bring it to completion at the day of Jesus Christ."
+    translation: "ESV"
+    theme: retirement-purpose
+    tone: encouraging
+
   - reference: "Psalm 71:18"
     text: "So even to old age and gray hairs, O God, do not forsake me, until I proclaim your might to another generation, your power to all those to come."
     translation: "ESV"
-    theme: legacy
-    tone: inspiring
+    theme: retirement-purpose
+    tone: encouraging
 
   - reference: "2 Timothy 4:7"
     text: "I have fought the good fight, I have finished the race, I have kept the faith."
     translation: "ESV"
-    theme: legacy
-    tone: inspiring
+    theme: retirement-purpose
+    tone: encouraging
 
-  - reference: "Proverbs 13:22"
-    text: "A good man leaves an inheritance to his children's children, but the sinner's wealth is laid up for the righteous."
+  # --- Past Regrets ---
+  - reference: "Isaiah 43:25"
+    text: "I, I am he who blots out your transgressions for my own sake, and I will not remember your sins."
     translation: "ESV"
-    theme: legacy
-    tone: inspiring
+    theme: past-regrets
+    tone: freeing
 
-  - reference: "Matthew 25:21"
-    text: "His master said to him, 'Well done, good and faithful servant. You have been faithful over a little; I will set you over much. Enter into the joy of your master.'"
+  - reference: "Psalm 103:12"
+    text: "As far as the east is from the west, so far does he remove our transgressions from us."
     translation: "ESV"
-    theme: legacy
-    tone: inspiring
+    theme: past-regrets
+    tone: freeing
 
-  - reference: "Hebrews 12:1"
-    text: "Therefore, since we are surrounded by so great a cloud of witnesses, let us also lay aside every weight, and sin which clings so closely, and let us run with endurance the race that is set before us."
+  - reference: "2 Corinthians 5:17"
+    text: "Therefore, if anyone is in Christ, he is a new creation. The old has passed away; behold, the new has come."
     translation: "ESV"
-    theme: legacy
-    tone: inspiring
+    theme: past-regrets
+    tone: freeing
 
-  # --- Grandparenting & Generational Blessing ---
+  - reference: "Romans 8:1"
+    text: "There is therefore now no condemnation for those who are in Christ Jesus."
+    translation: "ESV"
+    theme: past-regrets
+    tone: freeing
+
+  - reference: "Micah 7:19"
+    text: "He will again have compassion on us; he will tread our iniquities underfoot. You will cast all our sins into the depths of the sea."
+    translation: "ESV"
+    theme: past-regrets
+    tone: freeing
+
+  # --- Loneliness ---
+  - reference: "Psalm 68:6"
+    text: "God settles the solitary in a home; he leads out the prisoners to prosperity, but the rebellious dwell in a parched land."
+    translation: "ESV"
+    theme: loneliness
+    tone: comforting
+
+  - reference: "Deuteronomy 31:6"
+    text: "Be strong and courageous. Do not fear or be in dread of them, for it is the Lord your God who goes with you. He will not leave you or forsake you."
+    translation: "ESV"
+    theme: loneliness
+    tone: comforting
+
+  - reference: "Matthew 28:20"
+    text: "And behold, I am with you always, to the end of the age."
+    translation: "ESV"
+    theme: loneliness
+    tone: comforting
+
+  - reference: "Psalm 25:16"
+    text: "Turn to me and be gracious to me, for I am lonely and afflicted."
+    translation: "ESV"
+    theme: loneliness
+    tone: comforting
+
+  - reference: "Hebrews 13:5"
+    text: "Keep your life free from love of money, and be content with what you have, for he has said, 'I will never leave you nor forsake you.'"
+    translation: "ESV"
+    theme: loneliness
+    tone: comforting
+
+  # --- Grandparent Joy (remapped from grandparenting + legacy split) ---
   - reference: "Psalm 128:6"
     text: "May you see your children's children! Peace be upon Israel!"
     translation: "ESV"
-    theme: grandparenting
+    theme: grandparent-joy
     tone: joyful
 
   - reference: "Proverbs 17:6"
     text: "Grandchildren are the crown of the aged, and the glory of children is their fathers."
     translation: "ESV"
-    theme: grandparenting
+    theme: grandparent-joy
     tone: joyful
 
   - reference: "Deuteronomy 4:9"
     text: "Only take care, and keep your soul diligently, lest you forget the things that your eyes have seen, and lest they depart from your heart all the days of your life. Make them known to your children and your children's children."
     translation: "ESV"
-    theme: grandparenting
+    theme: grandparent-joy
     tone: joyful
 
   - reference: "Psalm 103:17"
     text: "But the steadfast love of the Lord is from everlasting to everlasting on those who fear him, and his righteousness to children's children."
     translation: "ESV"
-    theme: grandparenting
+    theme: grandparent-joy
+    tone: joyful
+
+  - reference: "Proverbs 13:22"
+    text: "A good man leaves an inheritance to his children's children, but the sinner's wealth is laid up for the righteous."
+    translation: "ESV"
+    theme: grandparent-joy
     tone: joyful
 
   - reference: "Titus 2:2-3"
     text: "Older men are to be sober-minded, dignified, self-controlled, sound in faith, in love, and in steadfastness. Older women likewise are to be reverent in behavior."
     translation: "ESV"
-    theme: grandparenting
+    theme: grandparent-joy
     tone: joyful
+
+  - reference: "Psalm 78:4"
+    text: "We will not hide them from their children, but tell to the coming generation the glorious deeds of the Lord, and his might, and the wonders that he has done."
+    translation: "ESV"
+    theme: grandparent-joy
+    tone: joyful
+
+  - reference: "Joel 1:3"
+    text: "Tell your children of it, and let your children tell their children, and their children to another generation."
+    translation: "ESV"
+    theme: grandparent-joy
+    tone: joyful
+
+  # --- Purity Struggle ---
+  - reference: "Romans 12:2"
+    text: "Do not be conformed to this world, but be transformed by the renewal of your mind, that by testing you may discern what is the will of God, what is good and acceptable and perfect."
+    translation: "ESV"
+    theme: purity-struggle
+    tone: convicting
+
+  - reference: "1 Corinthians 10:13"
+    text: "No temptation has overtaken you that is not common to man. God is faithful, and he will not let you be tempted beyond your ability, but with the temptation he will also provide the way of escape."
+    translation: "ESV"
+    theme: purity-struggle
+    tone: convicting
+
+  - reference: "Psalm 101:3"
+    text: "I will not set before my eyes anything that is worthless. I hate the work of those who fall away; it shall not cling to me."
+    translation: "ESV"
+    theme: purity-struggle
+    tone: convicting
+
+  - reference: "Philippians 4:8"
+    text: "Finally, brothers, whatever is true, whatever is honorable, whatever is just, whatever is pure, whatever is lovely, whatever is commendable, if there is any excellence, if there is anything worthy of praise, think about these things."
+    translation: "ESV"
+    theme: purity-struggle
+    tone: convicting
+
+  - reference: "James 4:7"
+    text: "Submit yourselves therefore to God. Resist the devil, and he will flee from you."
+    translation: "ESV"
+    theme: purity-struggle
+    tone: convicting
+
+  # --- Faith in a Dry Season (remapped from faith-doubts) ---
+  - reference: "Mark 9:24"
+    text: "Immediately the father of the child cried out and said, 'I believe; help my unbelief!'"
+    translation: "ESV"
+    theme: faith-dry-season
+    tone: reassuring
+
+  - reference: "Proverbs 3:5-6"
+    text: "Trust in the Lord with all your heart, and do not lean on your own understanding. In all your ways acknowledge him, and he will make straight your paths."
+    translation: "ESV"
+    theme: faith-dry-season
+    tone: reassuring
+
+  - reference: "Hebrews 11:1"
+    text: "Now faith is the assurance of things hoped for, the conviction of things not seen."
+    translation: "ESV"
+    theme: faith-dry-season
+    tone: reassuring
+
+  - reference: "Romans 8:28"
+    text: "And we know that for those who love God all things work together for good, for those who are called according to his purpose."
+    translation: "ESV"
+    theme: faith-dry-season
+    tone: reassuring
+
+  - reference: "Psalm 46:10"
+    text: "Be still, and know that I am God. I will be exalted among the nations, I will be exalted in the earth!"
+    translation: "ESV"
+    theme: faith-dry-season
+    tone: reassuring
+
+  # --- Stepping Into the Unknown (from legacy split + new) ---
+  - reference: "Joshua 1:9"
+    text: "Have I not commanded you? Be strong and courageous. Do not be frightened, and do not be dismayed, for the Lord your God is with you wherever you go."
+    translation: "ESV"
+    theme: new-season-fear
+    tone: courageous
+
+  - reference: "Hebrews 12:1"
+    text: "Therefore, since we are surrounded by so great a cloud of witnesses, let us also lay aside every weight, and sin which clings so closely, and let us run with endurance the race that is set before us."
+    translation: "ESV"
+    theme: new-season-fear
+    tone: courageous
+
+  - reference: "Matthew 25:21"
+    text: "His master said to him, 'Well done, good and faithful servant. You have been faithful over a little; I will set you over much. Enter into the joy of your master.'"
+    translation: "ESV"
+    theme: new-season-fear
+    tone: courageous
+
+  - reference: "Psalm 32:8"
+    text: "I will instruct you and teach you in the way you should go; I will counsel you with my eye upon you."
+    translation: "ESV"
+    theme: new-season-fear
+    tone: courageous
+
+  - reference: "Proverbs 16:9"
+    text: "The heart of man plans his way, but the Lord establishes his steps."
+    translation: "ESV"
+    theme: new-season-fear
+    tone: courageous

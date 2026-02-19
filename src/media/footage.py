@@ -1,4 +1,4 @@
-"""Stock footage search & download from Pexels and Pixabay."""
+"""Stock footage search & download from Pexels, Pixabay, and Kling AI."""
 
 from __future__ import annotations
 
@@ -14,6 +14,8 @@ from src.config import get_config_value
 from src.db import now_utc
 
 FOOTAGE_DIR = Path("media/footage")
+
+DEFAULT_KLING_MODEL = "fal-ai/kling-video/v2.5-turbo/pro/text-to-video"
 
 # ---------------------------------------------------------------------------
 # Pexels
@@ -129,6 +131,77 @@ def search_pixabay(
 
 
 # ---------------------------------------------------------------------------
+# Kling AI (via fal.ai)
+# ---------------------------------------------------------------------------
+
+
+def generate_kling_clips(
+    keywords: list[str],
+    db_path: str | None = None,
+    max_results: int = 3,
+) -> list[dict[str, Any]]:
+    """Generate video clips via Kling AI on fal.ai.
+
+    Uses ``fal_client.subscribe()`` to submit and wait for each clip.
+    Returns a list of dicts matching the stock-footage result shape.
+    """
+    try:
+        import fal_client  # type: ignore[import-untyped]
+    except ImportError as exc:
+        raise RuntimeError(
+            "fal-client package is not installed. Run: pip install fal-client"
+        ) from exc
+
+    api_key = os.getenv("FAL_KEY", "")
+    if not api_key:
+        raise RuntimeError("FAL_KEY is not set. Add it to your .env file.")
+
+    # fal_client reads FAL_KEY from the environment automatically.
+    model = get_config_value(
+        "footage.kling_model", DEFAULT_KLING_MODEL, db_path
+    )
+    duration = get_config_value("footage.kling_duration", "10", db_path)
+
+    FOOTAGE_DIR.mkdir(parents=True, exist_ok=True)
+    results: list[dict[str, Any]] = []
+
+    for keyword in keywords:
+        if len(results) >= max_results:
+            break
+
+        prompt = (
+            f"Slow cinematic shot of {keyword}, peaceful atmosphere, "
+            "warm golden light, soft focus, 4K"
+        )
+
+        response = fal_client.subscribe(
+            model,
+            arguments={
+                "prompt": prompt,
+                "aspect_ratio": "9:16",
+                "duration": duration,
+            },
+        )
+
+        video_url = response.get("video", {}).get("url", "")
+        if not video_url:
+            continue
+
+        request_id = response.get("request_id", keyword.replace(" ", "_"))
+        results.append({
+            "source": "kling",
+            "external_id": str(request_id),
+            "url": video_url,
+            "download_url": video_url,
+            "duration_sec": int(duration),
+            "resolution": "1080x1920",
+            "attribution": "Kling AI via fal.ai",
+        })
+
+    return results
+
+
+# ---------------------------------------------------------------------------
 # Unified search + download
 # ---------------------------------------------------------------------------
 
@@ -148,6 +221,10 @@ def search_footage(
     orientation = get_config_value(
         "footage.search_filters.orientation", "portrait", db_path
     )
+
+    # Kling generates video from text — no search/fallback needed.
+    if primary == "kling":
+        return generate_kling_clips(keywords, db_path, max_results)
 
     all_results: list[dict[str, Any]] = []
 

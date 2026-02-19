@@ -8,10 +8,10 @@ from typing import Any
 
 from src.db import now_utc
 
-# Target word-count range for ~62-70s at 140 WPM
-MIN_WORDS = 140  # ~60s floor
-MAX_WORDS = 165  # ~70s ceiling
-TARGET_WORDS = 150  # sweet spot ≈65s
+# Target word-count range for ~15-30s at 140 WPM
+MIN_WORDS = 35   # ~15s floor
+MAX_WORDS = 70   # ~30s ceiling
+TARGET_WORDS = 55  # sweet spot ≈24s
 
 
 def _build_system_prompt(theme_name: str, tone: str) -> str:
@@ -28,27 +28,39 @@ def _build_system_prompt(theme_name: str, tone: str) -> str:
         "- Never promise physical healing or financial gain.\n"
         "- Be honest about struggle while pointing to hope.\n"
         "- End with a brief, humble closing (\"In Jesus' name, Amen\" or similar).\n"
-        "- Do NOT include the Bible verse text in your prayer. The verse will be "
-        "shown separately in the video.\n"
+        "- Naturally weave the Bible verse reference (e.g. 'as Your word says in "
+        "Psalm 23') into the prayer. Do not quote the full verse text word-for-word.\n"
         "- Output ONLY the prayer text, no titles or labels."
     )
 
 
 def _build_user_prompt(
-    verse_reference: str, verse_text: str, theme_name: str, tone: str
+    verse_reference: str,
+    verse_text: str,
+    theme_name: str,
+    tone: str,
+    hook: str = "",
 ) -> str:
-    return (
+    prompt = (
         f"Theme: {theme_name}\n"
         f"Tone: {tone}\n"
         f"Verse: {verse_reference} — \"{verse_text}\"\n\n"
-        f"Write a {TARGET_WORDS}-word prayer inspired by this verse for the theme above."
     )
+    if hook:
+        prompt += (
+            f"Hook question for this video: {hook}\n"
+            "Write the prayer to speak to someone who would answer "
+            "'yes' to this question.\n\n"
+        )
+    prompt += f"Write a {TARGET_WORDS}-word prayer inspired by this verse for the theme above."
+    return prompt
 
 
 def generate_prayer_text(
     verse: dict[str, Any],
     theme: dict[str, Any],
     model: str = "gpt-4o-mini",
+    hook: str = "",
 ) -> str:
     """Generate prayer text via OpenAI. Raises if no API key is set."""
     try:
@@ -69,21 +81,42 @@ def generate_prayer_text(
     theme_name = theme.get("name", "")
     tone = theme.get("tone", "")
 
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": _build_system_prompt(theme_name, tone)},
-            {
-                "role": "user",
-                "content": _build_user_prompt(
-                    verse["reference"], verse["text"], theme_name, tone
-                ),
-            },
-        ],
-        temperature=0.8,
-        max_tokens=500,
-    )
-    return response.choices[0].message.content.strip()
+    try:
+        response = client.chat.completions.create(
+            model=model,
+            messages=[
+                {"role": "system", "content": _build_system_prompt(theme_name, tone)},
+                {
+                    "role": "user",
+                    "content": _build_user_prompt(
+                        verse["reference"], verse["text"], theme_name, tone,
+                        hook=hook,
+                    ),
+                },
+            ],
+            temperature=0.8,
+            max_tokens=500,
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as exc:
+        raise RuntimeError(f"OpenAI API error: {exc}") from exc
+
+
+def _tts_friendly_ref(ref: str) -> str:
+    """Convert verse references to TTS-friendly text.
+
+    'Psalm 91:9-11' → 'Psalm 91, verses 9 through 11'
+    'John 3:16'     → 'John chapter 3, verse 16'
+    """
+    import re
+    # Match "Book Chapter:Verse-Verse" or "Book Chapter:Verse"
+    m = re.match(r'^(.+?)\s+(\d+):(\d+)-(\d+)$', ref)
+    if m:
+        return f"{m.group(1)} chapter {m.group(2)}, verses {m.group(3)} through {m.group(4)}"
+    m = re.match(r'^(.+?)\s+(\d+):(\d+)$', ref)
+    if m:
+        return f"{m.group(1)} chapter {m.group(2)}, verse {m.group(3)}"
+    return ref
 
 
 def generate_prayer_text_fallback(
@@ -93,7 +126,7 @@ def generate_prayer_text_fallback(
     """Simple template-based fallback when no LLM API key is available."""
     tone = theme.get("tone", "comforting")
     name = theme.get("name", "faith")
-    ref = verse["reference"]
+    ref = _tts_friendly_ref(verse["reference"])
 
     return (
         f"Heavenly Father, we come before You today with hearts open to Your word. "

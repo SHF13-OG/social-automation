@@ -1,34 +1,68 @@
-# Content Themes - Second Half of Life
-# Each theme targets specific challenges faced by 45+ Christians
+# Content Themes - Hook-Based (Emotion + Life Event)
+# Each theme targets a specific pain point or aspiration for 45+ Christians
+# The "hook" question appears on-screen to stop the scroll
 
 themes:
-  - slug: grief
-    name: "Grief & Loss"
-    description: "Comfort for those mourning loved ones or facing loss"
+  - slug: wedding-joy
+    name: "Wedding Joy"
+    description: "Celebrating a child's wedding and the blessing of new family"
+    hook: "Is your child getting married soon?"
     keywords:
-      - "sunset peaceful"
-      - "nature calm"
-      - "candle memorial"
-      - "autumn leaves falling"
-      - "ocean waves gentle"
-    tone: "comforting"
+      - "wedding ceremony church"
+      - "celebration flowers"
+      - "family gathering joy"
+      - "rings altar"
+      - "bride groom walking"
+    tone: "joyful"
+    voice_id: "4QLC5fepxZkYmdD2IGRU"
     is_active: true
 
-  - slug: retirement
-    name: "Retirement & New Seasons"
-    description: "Finding purpose and identity beyond career"
+  - slug: money-worry
+    name: "Financial Worry"
+    description: "Finding peace when money feels tight or uncertain"
+    hook: "Are you feeling worried about money?"
     keywords:
-      - "garden peaceful morning"
-      - "sunrise mountain"
-      - "lake reflection"
+      - "sunrise hope morning"
+      - "hands prayer"
+      - "light through clouds"
+      - "calm water reflection"
+      - "peaceful nature"
+    tone: "reassuring"
+    voice_id: "8hcTQbQtx4uFCMEiTbGE"
+    is_active: true
+
+  - slug: closer-to-jesus
+    name: "Closer to Jesus"
+    description: "Deepening your personal relationship with Christ"
+    hook: "Do you want a deeper walk with Jesus?"
+    keywords:
+      - "cross silhouette sunset"
+      - "bible open light"
+      - "prayer hands quiet"
+      - "path through forest"
+      - "mountain sunrise"
+    tone: "inviting"
+    voice_id: "FA6HhUjVbervLw2rNl8M"
+    is_active: true
+
+  - slug: empty-nest
+    name: "Empty Nest"
+    description: "Adjusting when the kids have left home"
+    hook: "Is your house too quiet these days?"
+    keywords:
+      - "empty nest home"
       - "quiet morning coffee"
-      - "open road ahead"
-    tone: "encouraging"
+      - "bird flying free"
+      - "sunset porch"
+      - "garden peaceful"
+    tone: "comforting"
+    voice_id: "4QLC5fepxZkYmdD2IGRU"
     is_active: true
 
-  - slug: health
-    name: "Health Challenges"
-    description: "Strength and peace through physical trials"
+  - slug: health-scare
+    name: "Health Battle"
+    description: "Strength and hope through a health crisis"
+    hook: "Are you facing a health battle right now?"
     keywords:
       - "sunrise hope"
       - "walking path nature"
@@ -36,35 +70,27 @@ themes:
       - "still water reflection"
       - "morning dew flowers"
     tone: "hopeful"
+    voice_id: "8hcTQbQtx4uFCMEiTbGE"
     is_active: true
 
-  - slug: faith-doubts
-    name: "Faith Questions & Doubts"
-    description: "Navigating spiritual uncertainty with honesty"
+  - slug: losing-loved-one
+    name: "Losing a Loved One"
+    description: "Comfort and hope for those mourning a loss"
+    hook: "Have you lost someone you deeply love?"
     keywords:
-      - "mountain mist clouds"
-      - "ocean horizon"
-      - "starry night sky"
-      - "cross silhouette sunset"
-      - "path through forest"
-    tone: "reassuring"
+      - "sunset peaceful"
+      - "nature calm"
+      - "candle memorial"
+      - "autumn leaves falling"
+      - "ocean waves gentle"
+    tone: "comforting"
+    voice_id: "FA6HhUjVbervLw2rNl8M"
     is_active: true
 
-  - slug: adult-children
-    name: "Parenting Adult Children"
-    description: "Letting go, trusting God with your kids"
-    keywords:
-      - "bird flying free"
-      - "empty nest home"
-      - "family gathering dinner"
-      - "hands releasing butterfly"
-      - "tree branches reaching"
-    tone: "peaceful"
-    is_active: true
-
-  - slug: marriage-renewal
-    name: "Marriage After 25+ Years"
-    description: "Rekindling love, deepening commitment"
+  - slug: marriage-distance
+    name: "Marriage Feels Distant"
+    description: "Rekindling love and closeness in a long marriage"
+    hook: "Does your marriage feel distant lately?"
     keywords:
       - "couple walking beach"
       - "sunset together"
@@ -72,23 +98,83 @@ themes:
       - "quiet evening home"
       - "garden two chairs"
     tone: "loving"
+    voice_id: "4QLC5fepxZkYmdD2IGRU"
     is_active: true
 
-  - slug: legacy
-    name: "Legacy & Eternal Purpose"
-    description: "Making an impact that outlasts your years"
+  - slug: caring-for-parents
+    name: "Caring for Aging Parents"
+    description: "Strength for the season of caring for elderly parents"
+    hook: "Are you overwhelmed caring for aging parents?"
     keywords:
-      - "tree planting growth"
-      - "river flowing forward"
-      - "lighthouse beacon"
-      - "journal writing"
-      - "seeds sprouting soil"
-    tone: "inspiring"
+      - "hands holding gentle"
+      - "morning light window"
+      - "peaceful garden"
+      - "family love"
+      - "quiet strength"
+    tone: "strengthening"
+    voice_id: "8hcTQbQtx4uFCMEiTbGE"
     is_active: true
 
-  - slug: grandparenting
-    name: "Grandparenting & Generational Blessing"
-    description: "The joy and responsibility of grandchildren"
+  - slug: child-struggles
+    name: "Child Making Hard Choices"
+    description: "Peace when your adult child's choices worry you"
+    hook: "Is your adult child making choices that worry you?"
+    keywords:
+      - "bird flying free"
+      - "empty nest home"
+      - "family gathering dinner"
+      - "hands releasing butterfly"
+      - "tree branches reaching"
+    tone: "peaceful"
+    voice_id: "FA6HhUjVbervLw2rNl8M"
+    is_active: true
+
+  - slug: retirement-purpose
+    name: "Retirement & Purpose"
+    description: "Finding new meaning and direction in retirement"
+    hook: "Retired and wondering what's next?"
+    keywords:
+      - "garden peaceful morning"
+      - "sunrise mountain"
+      - "lake reflection"
+      - "quiet morning coffee"
+      - "open road ahead"
+    tone: "encouraging"
+    voice_id: "4QLC5fepxZkYmdD2IGRU"
+    is_active: true
+
+  - slug: past-regrets
+    name: "Past Regrets"
+    description: "Freedom from guilt and the weight of past mistakes"
+    hook: "Do past regrets keep weighing you down?"
+    keywords:
+      - "sunrise new day"
+      - "river flowing forward"
+      - "chains broken"
+      - "open field freedom"
+      - "light breaking through"
+    tone: "freeing"
+    voice_id: "8hcTQbQtx4uFCMEiTbGE"
+    is_active: true
+
+  - slug: loneliness
+    name: "Loneliness"
+    description: "Comfort for those feeling alone even in a crowd"
+    hook: "Are you feeling lonely even around others?"
+    keywords:
+      - "warm fireplace cozy"
+      - "community gathering"
+      - "coffee table morning"
+      - "hands reaching"
+      - "church fellowship"
+    tone: "comforting"
+    voice_id: "FA6HhUjVbervLw2rNl8M"
+    is_active: true
+
+  - slug: grandparent-joy
+    name: "Grandparent Joy"
+    description: "The joy and blessing of being a grandparent"
+    hook: "Do you want to be a blessing to your grandchildren?"
     keywords:
       - "reading together warm"
       - "playground children joy"
@@ -96,4 +182,47 @@ themes:
       - "baking together kitchen"
       - "generations hands"
     tone: "joyful"
+    voice_id: "4QLC5fepxZkYmdD2IGRU"
+    is_active: true
+
+  - slug: purity-struggle
+    name: "Purity Struggle"
+    description: "Breaking free from what pulls you away from God"
+    hook: "Is what you're watching pulling you from God?"
+    keywords:
+      - "shield armor"
+      - "mountain fortress"
+      - "clean water stream"
+      - "sunrise new morning"
+      - "cross light"
+    tone: "convicting"
+    voice_id: "8hcTQbQtx4uFCMEiTbGE"
+    is_active: true
+
+  - slug: faith-dry-season
+    name: "Faith in a Dry Season"
+    description: "When God feels far away and faith feels empty"
+    hook: "Does God feel far away right now?"
+    keywords:
+      - "mountain mist clouds"
+      - "ocean horizon"
+      - "starry night sky"
+      - "cross silhouette sunset"
+      - "path through forest"
+    tone: "reassuring"
+    voice_id: "FA6HhUjVbervLw2rNl8M"
+    is_active: true
+
+  - slug: new-season-fear
+    name: "Stepping Into the Unknown"
+    description: "Courage for unplanned transitions and new chapters"
+    hook: "Are you stepping into a season you didn't plan for?"
+    keywords:
+      - "open road ahead"
+      - "door opening light"
+      - "mountain path"
+      - "boat on water"
+      - "sunrise horizon"
+    tone: "courageous"
+    voice_id: "4QLC5fepxZkYmdD2IGRU"
     is_active: true

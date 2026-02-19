@@ -43,6 +43,9 @@ def test_build_system_prompt_contains_rules():
     assert "prosperity-gospel" in prompt.lower() or "prosperity" in prompt.lower()
     assert str(TARGET_WORDS) in prompt
     assert "prayer" in prompt.lower()
+    # Verse should be woven in, not excluded
+    assert "weave" in prompt.lower()
+    assert "shown separately" not in prompt.lower()
 
 
 def test_build_user_prompt_contains_verse():
@@ -50,6 +53,20 @@ def test_build_user_prompt_contains_verse():
     assert "Psalm 23:4" in prompt
     assert "Grief" in prompt
     assert "comforting" in prompt
+
+
+def test_build_user_prompt_with_hook():
+    prompt = _build_user_prompt(
+        "Psalm 23:4", "Valley of shadow...", "Grief", "comforting",
+        hook="Have you lost someone you deeply love?",
+    )
+    assert "Have you lost someone you deeply love?" in prompt
+    assert "Hook question" in prompt
+
+
+def test_build_user_prompt_without_hook():
+    prompt = _build_user_prompt("Psalm 23:4", "Valley of shadow...", "Grief", "comforting")
+    assert "Hook question" not in prompt
 
 
 def test_fallback_produces_reasonable_text():
@@ -61,7 +78,7 @@ def test_fallback_produces_reasonable_text():
     # Should be a reasonable prayer
     assert "Father" in text or "Lord" in text
     assert "Amen" in text
-    assert "Psalm 23:4" in text
+    assert "Psalm" in text and "23" in text
     assert "grief" in text.lower()
 
     # Word count should be in a reasonable range
