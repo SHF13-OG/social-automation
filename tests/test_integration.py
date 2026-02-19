@@ -4,19 +4,13 @@ These tests verify that all components work together correctly,
 testing the flow from theme selection through video composition.
 """
 
-import os
-from pathlib import Path
-from unittest.mock import patch, MagicMock
-
-import pytest
-
+from src.content.prayers import generate_prayer_text_fallback, save_prayer
+from src.content.themes import pick_theme
+from src.content.verses import mark_verse_used, pick_verse
 from src.db import connect, init_schema, now_utc
-from src.content.themes import get_active_themes, pick_theme
-from src.content.verses import get_verses_for_theme, pick_verse, mark_verse_used
-from src.content.prayers import save_prayer, generate_prayer_text_fallback
-from src.media.tts import _audio_path, save_audio_record
-from src.media.footage import save_footage_record
 from src.media.compositor import save_video_record
+from src.media.footage import save_footage_record
+from src.media.tts import _audio_path, save_audio_record
 from src.publishing.scheduler import add_to_queue, get_queue
 
 
