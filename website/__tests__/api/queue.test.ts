@@ -3,7 +3,7 @@
  *
  * These tests verify the queue API endpoint behavior:
  * - Returns 401 when not authenticated
- * - Returns empty array when authenticated (database not connected)
+ * - Returns empty array when authenticated
  */
 
 // Mock the session module
@@ -11,6 +11,13 @@ const mockGetSession = jest.fn()
 
 jest.mock('@/lib/session', () => ({
   getSession: () => mockGetSession(),
+}))
+
+const mockGetQueueItems = jest.fn()
+
+jest.mock('@/lib/db', () => ({
+  ensureDb: jest.fn(),
+  getQueueItems: (...args: any[]) => mockGetQueueItems(...args),
 }))
 
 jest.mock('next/server', () => ({
@@ -45,10 +52,12 @@ describe('GET /api/queue', () => {
     mockGetSession.mockResolvedValue({
       user: { email: 'admin@example.com', name: 'Admin', image: '' },
     })
+    mockGetQueueItems.mockReturnValue([])
 
     const { GET } = await import('@/app/api/queue/route')
 
-    const response = await GET()
+    const mockRequest = { url: 'http://localhost/api/queue' }
+    const response = await GET(mockRequest as any)
     const data = await response.json()
 
     expect(response.status).toBe(200)

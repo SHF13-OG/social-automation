@@ -36,6 +36,7 @@
     "@opennextjs/cloudflare": "^1.16.3",
     "@testing-library/jest-dom": "^6.1.0",
     "@testing-library/react": "^14.1.0",
+    "@types/jest": "^30.0.0",
     "@types/sql.js": "^1.4.9",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",

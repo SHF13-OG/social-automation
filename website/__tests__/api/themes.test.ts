@@ -3,7 +3,8 @@
  *
  * These tests verify the themes API endpoint behavior:
  * - Returns 401 when not authenticated
- * - Returns empty array when authenticated (database not connected)
+ * - Returns themes array when authenticated
+ * - Returns 500 when database update fails
  */
 
 // Mock the session module
@@ -11,6 +12,17 @@ const mockGetSession = jest.fn()
 
 jest.mock('@/lib/session', () => ({
   getSession: () => mockGetSession(),
+}))
+
+const mockGetThemesWithStats = jest.fn()
+const mockUpdateTheme = jest.fn()
+const mockSaveDb = jest.fn()
+
+jest.mock('@/lib/db', () => ({
+  ensureDb: jest.fn(),
+  getThemesWithStats: () => mockGetThemesWithStats(),
+  updateTheme: (...args: any[]) => mockUpdateTheme(...args),
+  saveDb: () => mockSaveDb(),
 }))
 
 jest.mock('next/server', () => ({
@@ -41,10 +53,11 @@ describe('GET /api/themes', () => {
     expect(data).toEqual({ error: 'Unauthorized' })
   })
 
-  it('returns empty array when authenticated', async () => {
+  it('returns themes array when authenticated', async () => {
     mockGetSession.mockResolvedValue({
       user: { email: 'admin@example.com', name: 'Admin', image: '' },
     })
+    mockGetThemesWithStats.mockReturnValue([])
 
     const { GET } = await import('@/app/api/themes/route')
 
@@ -78,9 +91,12 @@ describe('PUT /api/themes', () => {
     expect(data).toEqual({ error: 'Unauthorized' })
   })
 
-  it('returns 503 when database not available', async () => {
+  it('returns 500 when database update fails', async () => {
     mockGetSession.mockResolvedValue({
       user: { email: 'admin@example.com', name: 'Admin', image: '' },
+    })
+    mockUpdateTheme.mockImplementation(() => {
+      throw new Error('Database not available')
     })
 
     const { PUT } = await import('@/app/api/themes/route')
@@ -92,7 +108,7 @@ describe('PUT /api/themes', () => {
     const response = await PUT(mockRequest as any)
     const data = await response.json()
 
-    expect(response.status).toBe(503)
-    expect(data).toEqual({ error: 'Database not available' })
+    expect(response.status).toBe(500)
+    expect(data).toEqual({ error: 'Failed to update theme' })
   })
 })
