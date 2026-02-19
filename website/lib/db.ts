@@ -539,6 +539,96 @@ export function getTestRuns(days: number = 30): TestRun[] {
   }
 }
 
+// Post history interface and query
+export interface PostHistoryEntry {
+  id: number
+  post_number: number
+  theme_slug: string
+  theme_name: string
+  theme_hook: string | null
+  verse_ref: string
+  verse_text: string
+  cta: string
+  description: string
+  hashtags: string
+  status: string
+  prayer_id: number | null
+  prayer_text: string | null
+  word_count: number | null
+  tiktok_post_id: string | null
+  tiktok_views: number | null
+  tiktok_likes: number | null
+  tiktok_comments: number | null
+  tiktok_shares: number | null
+  tiktok_favorites: number | null
+  tiktok_url: string | null
+  video_path: string | null
+  created_at: string
+  updated_at: string
+}
+
+export function getPostHistory(opts?: {
+  status?: string
+  themeSlug?: string
+  limit?: number
+}): PostHistoryEntry[] {
+  try {
+    const conditions: string[] = []
+    const params: any[] = []
+
+    if (opts?.status) {
+      conditions.push('le.status = ?')
+      params.push(opts.status)
+    }
+    if (opts?.themeSlug) {
+      conditions.push('le.theme_slug = ?')
+      params.push(opts.themeSlug)
+    }
+
+    const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : ''
+    const limit = opts?.limit ?? 50
+    params.push(limit)
+
+    return runQuery<PostHistoryEntry>(`
+      SELECT
+        le.id,
+        le.post_number,
+        le.theme_slug,
+        le.theme_name,
+        t.hook AS theme_hook,
+        le.verse_ref,
+        le.verse_text,
+        le.cta,
+        le.description,
+        le.hashtags,
+        le.status,
+        le.prayer_id,
+        p.prayer_text,
+        p.word_count,
+        le.tiktok_post_id,
+        tp.views AS tiktok_views,
+        tp.likes AS tiktok_likes,
+        tp.comments AS tiktok_comments,
+        tp.shares AS tiktok_shares,
+        tp.favorites AS tiktok_favorites,
+        tp.url AS tiktok_url,
+        le.video_path,
+        le.created_at,
+        le.updated_at
+      FROM lineup_entries le
+      LEFT JOIN prayers p ON le.prayer_id = p.id
+      LEFT JOIN themes t ON le.theme_id = t.id
+      LEFT JOIN tiktok_posts tp ON le.tiktok_post_id = tp.post_id
+      ${where}
+      ORDER BY le.post_number DESC
+      LIMIT ?
+    `, params)
+  } catch (error) {
+    console.error('Error getting post history:', error)
+    return []
+  }
+}
+
 // Helper to save a test run result
 export function saveTestRun(run: Omit<TestRun, 'id' | 'created_at'>): void {
   if (!db) throw new Error('Database not available')

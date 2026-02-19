@@ -31,7 +31,21 @@ def now_utc() -> str:
 def init_schema(conn: sqlite3.Connection) -> None:
     """Create all tables if they don't exist."""
     conn.executescript(_SCHEMA_SQL)
+    # Migrations for existing databases
+    _migrate_add_column(conn, "themes", "hook", "TEXT")
+    _migrate_add_column(conn, "lineup_entries", "tiktok_post_id", "TEXT")
     conn.commit()
+
+
+def _migrate_add_column(
+    conn: sqlite3.Connection, table: str, column: str, col_type: str
+) -> None:
+    """Add a column to an existing table if it doesn't exist yet."""
+    cur = conn.execute(f"PRAGMA table_info({table})")
+    columns = [row[1] for row in cur.fetchall()]
+    if column not in columns:
+        conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+
 
 
 _SCHEMA_SQL = """
@@ -60,6 +74,8 @@ CREATE TABLE IF NOT EXISTS themes (
     description TEXT,
     keywords    TEXT,           -- JSON array for stock footage search
     tone        TEXT,
+    hook        TEXT,           -- Hook question for TikTok overlay
+    voice_id    TEXT,           -- ElevenLabs voice ID for this theme
     is_active   INTEGER DEFAULT 1,
     created_at  TEXT,
     updated_at  TEXT

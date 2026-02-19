@@ -11,13 +11,15 @@ content:
   words_per_minute: 140
   default_translation: "ESV"
 
-# Voice Settings (ElevenLabs)
+# Voice Settings
 voice:
-  provider: "elevenlabs"
-  default_voice_id: "EXAVITQu4vr4xnSDxMaL"  # Sarah - warm, mature
-  speed: 0.95  # Slightly slower for clarity
+  provider: "elevenlabs"          # "elevenlabs" or "openai"
+  default_voice_id: "EXAVITQu4vr4xnSDxMaL"  # Sarah - warm, mature (ElevenLabs)
+  speed: 0.95  # Slightly slower for clarity (ElevenLabs only)
   stability: 0.7
   similarity_boost: 0.8
+  openai_voice: "onyx"            # onyx, nova, sage, ash, alloy, echo, fable, shimmer
+  openai_model: "gpt-4o-mini-tts"
 
 # Video Settings
 video:
@@ -41,9 +43,11 @@ text:
 
 # Stock Footage
 footage:
-  primary_source: "pexels"
+  primary_source: "pexels"        # "pexels", "pixabay", or "kling"
   fallback_source: "pixabay"
   preferred_duration_sec: 10
+  kling_model: "fal-ai/kling-video/v2.5-turbo/pro/text-to-video"
+  kling_duration: "10"
   search_filters:
     orientation: "portrait"
     min_resolution: 1080

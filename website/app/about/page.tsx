@@ -33,35 +33,33 @@ export default function AboutPage() {
 
         <div className="space-y-6 text-cream/90 text-lg leading-relaxed">
           <p>
-            <span className="text-accent-beige font-serif">2nd half faith</span> provides daily
-            prayers and devotionals specifically crafted for Christians navigating the second
-            half of life.
+            <span className="text-accent-beige font-serif">2nd half faith</span> started with
+            a simple belief: AI and social media can be used for good.
           </p>
 
           <p>
-            Whether you&apos;re facing retirement, health challenges, grief, questions about your
-            legacy, or the joys and complexities of grandparenting, we believe God&apos;s Word
-            speaks directly to your journey.
+            I&apos;m a Christian in the second half of life, and like many of you, I&apos;m working
+            every day to strengthen my relationship with Jesus. Some days that feels easy.
+            Other days, life gets heavy — health scares, losing people we love, watching
+            our kids navigate a world we barely recognize, wondering what comes next.
           </p>
 
-          <div className="bg-navy-charcoal/50 rounded-2xl p-6 my-8">
-            <h2 className="text-xl font-serif text-accent-beige mb-4">Our Themes</h2>
-            <ul className="space-y-2 text-cream/80">
-              <li>• <span className="text-accent-beige">Grief & Loss</span> — Finding comfort in sorrow</li>
-              <li>• <span className="text-accent-beige">Retirement</span> — Embracing new purpose</li>
-              <li>• <span className="text-accent-beige">Health Challenges</span> — Hope in difficulty</li>
-              <li>• <span className="text-accent-beige">Faith Questions</span> — Honest doubts, deeper trust</li>
-              <li>• <span className="text-accent-beige">Adult Children</span> — Letting go, staying connected</li>
-              <li>• <span className="text-accent-beige">Marriage Renewal</span> — Love that lasts</li>
-              <li>• <span className="text-accent-beige">Legacy</span> — What you leave behind</li>
-              <li>• <span className="text-accent-beige">Grandparenting</span> — Generational blessing</li>
-            </ul>
-          </div>
+          <p>
+            I wanted a way to share that journey honestly. Not to preach, but to pray
+            alongside others who feel the same things I do. So I built this — a daily
+            prayer paired with Scripture, spoken from the heart of someone who&apos;s walking
+            the same road.
+          </p>
 
           <p>
-            Each day, we share a Scripture passage paired with a heartfelt prayer that speaks
-            to the unique experiences of those 45 and older. Our content is also available
-            on TikTok, where we reach thousands with encouragement and faith.
+            Every prayer is crafted for the real questions and emotions that come with
+            this season of life. The kind of prayers you&apos;d whisper on a hard morning or
+            hold onto when you can&apos;t find the words yourself.
+          </p>
+
+          <p>
+            My hope is simple: that these prayers meet you where you are and remind you
+            that God is still speaking into the second half of your story.
           </p>
 
           <div className="flex justify-center mt-8">

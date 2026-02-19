@@ -600,13 +600,15 @@ def init_themes_cmd(
         for t in themes:
             conn.execute(
                 """
-                INSERT INTO themes (slug, name, description, keywords, tone, is_active, created_at, updated_at)
-                VALUES (:slug, :name, :description, :keywords, :tone, :is_active, :created_at, :updated_at)
+                INSERT INTO themes (slug, name, description, keywords, tone, hook, voice_id, is_active, created_at, updated_at)
+                VALUES (:slug, :name, :description, :keywords, :tone, :hook, :voice_id, :is_active, :created_at, :updated_at)
                 ON CONFLICT(slug) DO UPDATE SET
                     name = excluded.name,
                     description = excluded.description,
                     keywords = excluded.keywords,
                     tone = excluded.tone,
+                    hook = excluded.hook,
+                    voice_id = excluded.voice_id,
                     is_active = excluded.is_active,
                     updated_at = excluded.updated_at
                 """,
@@ -616,6 +618,8 @@ def init_themes_cmd(
                     "description": t.get("description", ""),
                     "keywords": json.dumps(t.get("keywords", [])),
                     "tone": t.get("tone", ""),
+                    "hook": t.get("hook", ""),
+                    "voice_id": t.get("voice_id", ""),
                     "is_active": 1 if t.get("is_active", True) else 0,
                     "created_at": now,
                     "updated_at": now,
@@ -853,7 +857,7 @@ def compose_cmd(
     from src.media.tts import generate_audio, save_audio_record
 
     try:
-        audio_info = generate_audio(prayer_id, prayer_row["prayer_text"], db_path)
+        audio_info = generate_audio(prayer_id, prayer_row["prayer_text"], db_path, voice_id=dict(theme_row).get("voice_id"))
         audio_id = save_audio_record(conn, prayer_id, audio_info)
         console.print(f"  Audio saved: {audio_info['file_path']}")
     except RuntimeError as exc:
@@ -910,6 +914,7 @@ def compose_cmd(
             prayer_text=prayer_row["prayer_text"],
             theme_slug=theme_row["slug"],
             db_path=db_path,
+            hook_text=dict(theme_row).get("hook", "") or "",
         )
         video_id = save_video_record(
             conn, prayer_id, audio_id, footage_ids, video_info, db_path
@@ -1116,6 +1121,12 @@ def generate_daily_cmd(
     from_lineup: bool = typer.Option(
         False, "--from-lineup", help="Read next pending entry from lineup_entries table."
     ),
+    post_date: str = typer.Option(
+        None, "--post-date", help="Post date tag (e.g. 'feb19'). Defaults to tomorrow."
+    ),
+    tod: str = typer.Option(
+        "am", "--tod", help="Time of day: am, aft, or pm."
+    ),
 ) -> None:
     """Generate content and compose a TikTok video in one step."""
     from src.content.prayers import (
@@ -1187,9 +1198,10 @@ def generate_daily_cmd(
 
     # 3. Generate prayer
     console.print("\n[bold]Generating prayer...[/bold]")
+    theme_hook = chosen_theme.get("hook", "") or ""
     ai_model_used: str | None = None
     try:
-        prayer_text = generate_prayer_text(verse, chosen_theme, model=model)
+        prayer_text = generate_prayer_text(verse, chosen_theme, model=model, hook=theme_hook)
         ai_model_used = model
         console.print(f"  (via OpenAI {model})")
     except RuntimeError as exc:
@@ -1224,10 +1236,13 @@ def generate_daily_cmd(
     console.print("\n[bold]Step 1:[/bold] Generating audio...")
     from src.media.tts import generate_audio, save_audio_record
 
+    theme_voice_id = chosen_theme.get("voice_id")
     try:
-        audio_info = generate_audio(prayer_id, prayer_text, db_path)
+        audio_info = generate_audio(prayer_id, prayer_text, db_path, voice_id=theme_voice_id)
         audio_id = save_audio_record(conn, prayer_id, audio_info)
         console.print(f"  Audio saved: {audio_info['file_path']}")
+        if theme_voice_id:
+            console.print(f"  Voice: {theme_voice_id}")
     except RuntimeError as exc:
         conn.close()
         console.print(f"  [red]{exc}[/red]")
@@ -1273,6 +1288,7 @@ def generate_daily_cmd(
     from src.media.compositor import compose_video, save_video_record
 
     try:
+        hook_text = chosen_theme.get("hook", "") or ""
         video_info = compose_video(
             audio_path=audio_info["file_path"],
             footage_paths=footage_paths,
@@ -1283,6 +1299,11 @@ def generate_daily_cmd(
             theme_slug=chosen_theme["slug"],
             db_path=db_path,
             cta_override=cta,
+            post_number=row["post_number"] if from_lineup and row is not None else None,
+            hook_text=hook_text,
+            verse_id=verse["id"],
+            post_date=post_date,
+            time_of_day=tod,
         )
         video_id = save_video_record(
             conn, prayer_id, audio_id, footage_ids, video_info, db_path
@@ -1327,7 +1348,6 @@ def preview_lineup_cmd(
     ),
 ) -> None:
     """Preview and save the next N posts to the lineup_entries table."""
-    from src.content.themes import pick_theme
     from src.content.verses import pick_verse
     from src.db import connect as db_connect
     from src.db import init_schema, now_utc
@@ -1372,15 +1392,24 @@ def preview_lineup_cmd(
         console.print(table)
         return
 
-    # Generate new lineup by simulating rotation
+    # Generate new lineup by cycling through all active themes
+    from src.content.themes import get_active_themes
+
+    all_themes = get_active_themes(conn)
+    if not all_themes:
+        conn.close()
+        console.print("[red]No active themes available.[/red]")
+        raise typer.Exit(code=1)
+
+    import random
+    random.shuffle(all_themes)
+
     lineup: list[dict[str, Any]] = []
     used_verse_ids: set[int] = set()
 
     for i in range(1, count + 1):
-        chosen_theme = pick_theme(conn)
-        if chosen_theme is None:
-            console.print(f"[yellow]Ran out of themes at post {i}.[/yellow]")
-            break
+        # Cycle through shuffled themes so each appears before any repeats
+        chosen_theme = all_themes[(i - 1) % len(all_themes)]
 
         verse = pick_verse(conn, chosen_theme["id"])
         if verse is None:
@@ -1389,9 +1418,6 @@ def preview_lineup_cmd(
             )
             continue
 
-        # Skip already-used verses in this lineup to simulate rotation
-        if verse["id"] in used_verse_ids:
-            pass
         used_verse_ids.add(verse["id"])
 
         cta_text = THEME_CTAS.get(

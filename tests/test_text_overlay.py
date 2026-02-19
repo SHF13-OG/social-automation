@@ -1,19 +1,16 @@
 """Tests for src/media/text_overlay.py - Pillow-based text overlay generation."""
 
-import os
 from pathlib import Path
-from unittest.mock import patch, MagicMock
-
-import pytest
+from unittest.mock import MagicMock, patch
 
 from src.media.text_overlay import (
     THEME_CTAS,
     TIKTOK_BOTTOM_SAFE_ZONE,
-    _wrap_text,
+    TIKTOK_TOP_SAFE_ZONE,
     _get_font,
+    _wrap_text,
     generate_overlay_frames,
     generate_single_overlay,
-    OVERLAY_DIR,
 )
 
 
@@ -22,8 +19,11 @@ class TestThemeCTAs:
 
     def test_all_themes_have_ctas(self):
         expected_themes = [
-            "grief", "retirement", "health", "faith-doubts",
-            "adult-children", "marriage-renewal", "legacy", "grandparenting"
+            "wedding-joy", "money-worry", "closer-to-jesus", "empty-nest",
+            "health-scare", "losing-loved-one", "marriage-distance",
+            "caring-for-parents", "child-struggles", "retirement-purpose",
+            "past-regrets", "loneliness", "grandparent-joy",
+            "purity-struggle", "faith-dry-season", "new-season-fear",
         ]
         for theme in expected_themes:
             assert theme in THEME_CTAS
@@ -110,7 +110,7 @@ class TestGetFont:
 class TestGenerateOverlayFrames:
     """Tests for multi-frame overlay generation."""
 
-    def test_generates_four_frames(self, tmp_path):
+    def test_generates_multiple_frames(self, tmp_path):
         overlay_dir = tmp_path / "overlays"
         with patch('src.media.text_overlay.OVERLAY_DIR', overlay_dir):
             overlay_dir.mkdir(parents=True, exist_ok=True)
@@ -119,11 +119,12 @@ class TestGenerateOverlayFrames:
                 verse_ref="Psalm 23:4",
                 verse_text="Even though I walk through the valley of the shadow of death, I will fear no evil.",
                 prayer_text=" ".join(["word"] * 160),  # ~160 words
-                theme_slug="grief",
+                theme_slug="losing-loved-one",
                 duration_sec=65.0,
             )
 
-            assert len(frames) == 4
+            # 2-line chunks: frame count depends on wrapped line count
+            assert len(frames) >= 1
 
     def test_frame_structure(self, tmp_path):
         with patch('src.media.text_overlay.OVERLAY_DIR', tmp_path / "overlays"):
@@ -133,7 +134,7 @@ class TestGenerateOverlayFrames:
                 verse_ref="John 3:16",
                 verse_text="For God so loved the world.",
                 prayer_text=" ".join(["test"] * 100),
-                theme_slug="faith-doubts",
+                theme_slug="faith-dry-season",
                 duration_sec=60.0,
             )
 
@@ -153,7 +154,7 @@ class TestGenerateOverlayFrames:
                 verse_ref="Test 1:1",
                 verse_text="Test verse.",
                 prayer_text=" ".join(["word"] * 150),
-                theme_slug="health",
+                theme_slug="health-scare",
                 duration_sec=duration,
             )
 
@@ -171,7 +172,7 @@ class TestGenerateOverlayFrames:
                 verse_ref="Test 1:1",
                 verse_text="Short verse.",
                 prayer_text=" ".join(["prayer"] * 80),
-                theme_slug="legacy",
+                theme_slug="grandparent-joy",
                 duration_sec=62.0,
             )
 
@@ -193,7 +194,32 @@ class TestGenerateOverlayFrames:
                 theme_slug="unknown-theme",
                 duration_sec=60.0,
             )
-            assert len(frames) == 4
+            assert len(frames) >= 1
+
+    def test_hook_text_renders(self, tmp_path):
+        """Frames with hook_text should render pixels in the hook area."""
+        import numpy as np
+        from PIL import Image
+
+        overlay_dir = tmp_path / "overlays"
+        with patch('src.media.text_overlay.OVERLAY_DIR', overlay_dir):
+            overlay_dir.mkdir(parents=True, exist_ok=True)
+
+            frames = generate_overlay_frames(
+                verse_ref="Test 1:1",
+                verse_text="Short verse.",
+                prayer_text=" ".join(["word"] * 80),
+                theme_slug="money-worry",
+                duration_sec=62.0,
+                hook_text="Are you feeling worried about money?",
+            )
+
+            # Check that the first frame has rendered content
+            img = Image.open(frames[0]["file_path"])
+            arr = np.array(img)
+            # Hook renders at y=height//4 which is 480; check 470-560 area
+            hook_area = arr[470:560, :, 3]
+            assert hook_area.max() > 0, "Hook text should render pixels in the hook area"
 
 
 class TestGenerateSingleOverlay:
@@ -208,7 +234,7 @@ class TestGenerateSingleOverlay:
                 verse_ref="Romans 8:28",
                 verse_text="And we know that in all things God works for the good.",
                 prayer_text=" ".join(["prayer"] * 100),
-                theme_slug="retirement",
+                theme_slug="retirement-purpose",
                 chunk_index=0,
             )
 
@@ -225,14 +251,14 @@ class TestGenerateSingleOverlay:
                 verse_ref="Test 1:1",
                 verse_text="Test.",
                 prayer_text=" ".join(["word"] * 100),
-                theme_slug="grief",
+                theme_slug="losing-loved-one",
                 chunk_index=0,
             )
             path2 = generate_single_overlay(
                 verse_ref="Test 1:1",
                 verse_text="Test.",
                 prayer_text=" ".join(["word"] * 100),
-                theme_slug="grief",
+                theme_slug="losing-loved-one",
                 chunk_index=2,
             )
 
@@ -248,13 +274,31 @@ class TestGenerateSingleOverlay:
                 verse_ref="Test 1:1",
                 verse_text="Test.",
                 prayer_text=" ".join(["word"] * 80),
-                theme_slug="health",
+                theme_slug="health-scare",
                 chunk_index=0,
                 width=720,
                 height=1280,
             )
 
             assert Path(path).exists()
+
+    def test_hook_text_parameter(self, tmp_path):
+        """Single overlay should accept and render hook_text."""
+        overlay_dir = tmp_path / "overlays"
+        with patch('src.media.text_overlay.OVERLAY_DIR', overlay_dir):
+            overlay_dir.mkdir(parents=True, exist_ok=True)
+
+            path = generate_single_overlay(
+                verse_ref="Test 1:1",
+                verse_text="Short verse.",
+                prayer_text=" ".join(["word"] * 80),
+                theme_slug="loneliness",
+                chunk_index=0,
+                hook_text="Are you feeling lonely even around others?",
+            )
+
+            assert Path(path).exists()
+            assert Path(path).stat().st_size > 0
 
 
 class TestIntegration:
@@ -282,11 +326,11 @@ class TestIntegration:
                 verse_ref=verse_ref,
                 verse_text=verse_text,
                 prayer_text=prayer_text,
-                theme_slug="faith-doubts",
+                theme_slug="faith-dry-season",
                 duration_sec=65.0,
             )
 
-            assert len(frames) == 4
+            assert len(frames) >= 1
             for frame in frames:
                 file_path = Path(frame["file_path"])
                 assert file_path.exists()
@@ -300,15 +344,18 @@ class TestIntegration:
 class TestTikTokSafeZone:
     """Tests for TikTok safe zone compliance."""
 
-    def test_safe_zone_constant_exists(self):
+    def test_safe_zone_constants_exist(self):
         assert TIKTOK_BOTTOM_SAFE_ZONE is not None
+        assert TIKTOK_TOP_SAFE_ZONE is not None
 
     def test_safe_zone_in_reasonable_range(self):
-        # 15-21% of 1920 = 288-403
+        # Bottom: 15-21% of 1920 = 288-403
         assert 288 <= TIKTOK_BOTTOM_SAFE_ZONE <= 400
+        # Top: 8-12% of 1920 = 154-230
+        assert 154 <= TIKTOK_TOP_SAFE_ZONE <= 230
 
-    def test_cta_renders_above_safe_zone(self, tmp_path):
-        """CTA text must not appear below (height - safe_zone) pixels."""
+    def test_content_within_safe_zones(self, tmp_path):
+        """All content must render between top and bottom safe zones."""
         import numpy as np
         from PIL import Image
 
@@ -321,7 +368,7 @@ class TestTikTokSafeZone:
                 verse_ref="Psalm 23:4",
                 verse_text="Even though I walk through the valley.",
                 prayer_text=" ".join(["word"] * 100),
-                theme_slug="grief",
+                theme_slug="losing-loved-one",
                 chunk_index=0,
                 width=1080,
                 height=height,
@@ -330,9 +377,15 @@ class TestTikTokSafeZone:
             img = Image.open(path)
             arr = np.array(img)
 
-            # Check that no non-transparent pixels exist below the safe zone boundary
-            safe_zone_y = height - TIKTOK_BOTTOM_SAFE_ZONE
-            below_safe_zone = arr[safe_zone_y:, :, 3]  # Alpha channel
-            assert below_safe_zone.max() == 0, (
-                f"Found rendered pixels below safe zone (y>{safe_zone_y})"
+            # Check no content below bottom safe zone
+            bottom_safe_y = height - TIKTOK_BOTTOM_SAFE_ZONE
+            below = arr[bottom_safe_y:, :, 3]
+            assert below.max() == 0, (
+                f"Found rendered pixels below bottom safe zone (y>{bottom_safe_y})"
+            )
+
+            # Check no content above top safe zone
+            above = arr[:TIKTOK_TOP_SAFE_ZONE, :, 3]
+            assert above.max() == 0, (
+                f"Found rendered pixels above top safe zone (y<{TIKTOK_TOP_SAFE_ZONE})"
             )

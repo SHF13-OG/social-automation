@@ -95,6 +95,14 @@ def _build_text_filter(
     return f"{verse_filter},{verse_body}"
 
 
+def _default_post_date() -> str:
+    """Return tomorrow's date formatted as e.g. 'feb19'."""
+    from datetime import datetime, timedelta, timezone
+
+    tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
+    return tomorrow.strftime("%b%d").lower()
+
+
 def compose_video(
     audio_path: str,
     footage_paths: list[str],
@@ -105,6 +113,11 @@ def compose_video(
     theme_slug: str = "",
     db_path: str | None = None,
     cta_override: str | None = None,
+    post_number: int | None = None,
+    hook_text: str = "",
+    verse_id: int | None = None,
+    post_date: str | None = None,
+    time_of_day: str = "am",
 ) -> dict[str, Any]:
     """Assemble the final TikTok video.
 
@@ -119,12 +132,14 @@ def compose_video(
     bitrate = get_config_value("video.bitrate", "8M", db_path)
 
     VIDEO_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = VIDEO_DIR / f"video_{prayer_id}.mp4"
+    date_tag = post_date or _default_post_date()
+    vid = verse_id or prayer_id
+    out_path = VIDEO_DIR / f"video_{date_tag}{time_of_day}_{vid}.mp4"
 
     if not footage_paths:
         raise RuntimeError("No footage clips provided.")
 
-    footage_input = footage_paths[0]  # Primary clip
+    num_clips = len(footage_paths)
 
     # Generate text overlay frames using Pillow
     overlay_frames = []
@@ -138,36 +153,60 @@ def compose_video(
             width=int(width),
             height=int(height),
             cta_override=cta_override,
+            hook_text=hook_text,
         )
 
     # Build FFmpeg command with overlay inputs
     cmd = [ffmpeg, "-y"]
 
-    # Input 0: footage
-    cmd.extend(["-i", footage_input])
+    # Inputs 0..N-1: footage clips
+    for fp in footage_paths:
+        cmd.extend(["-i", fp])
 
-    # Input 1: audio
+    # Input N: audio
+    audio_input_idx = num_clips
     cmd.extend(["-i", audio_path])
 
-    # Inputs 2+: overlay PNGs
+    # Inputs N+1+: overlay PNGs
+    overlay_start_idx = num_clips + 1
     for frame in overlay_frames:
         cmd.extend(["-i", frame["file_path"]])
 
-    if overlay_frames:
-        # Build filter complex with timed overlays
-        # First, prepare the video (loop, trim, scale, crop)
-        filter_parts = [
+    if num_clips == 1:
+        # Single clip: loop to fill duration (existing behavior)
+        base_filter = (
             f"[0:v]loop=loop=-1:size=1000:start=0,"
             f"trim=duration={duration},"
             f"setpts=PTS-STARTPTS,"
             f"scale={width}:{height}:force_original_aspect_ratio=increase,"
             f"crop={width}:{height}[base]"
-        ]
+        )
+    else:
+        # Multi-clip: scale each, trim to equal share, concatenate
+        clip_dur = duration / num_clips
+        clip_parts = []
+        for i in range(num_clips):
+            label = f"clip{i}"
+            clip_parts.append(
+                f"[{i}:v]loop=loop=-1:size=1000:start=0,"
+                f"trim=duration={clip_dur},"
+                f"setpts=PTS-STARTPTS,"
+                f"scale={width}:{height}:force_original_aspect_ratio=increase,"
+                f"crop={width}:{height}[{label}]"
+            )
+        concat_inputs = "".join(f"[clip{i}]" for i in range(num_clips))
+        clip_parts.append(
+            f"{concat_inputs}concat=n={num_clips}:v=1:a=0[base]"
+        )
+        base_filter = ";".join(clip_parts)
+
+    if overlay_frames:
+        filter_parts = [base_filter]
 
         # Chain overlays with enable expressions for timing
         prev_label = "base"
         for i, frame in enumerate(overlay_frames):
-            input_idx = i + 2  # overlay inputs start at index 2
+            input_idx = overlay_start_idx + i
             start = frame["start_sec"]
             end = frame["end_sec"]
             out_label = f"v{i}" if i < len(overlay_frames) - 1 else "outv"
@@ -179,19 +218,13 @@ def compose_video(
 
         filter_complex = ";".join(filter_parts)
     else:
-        # No overlays - simple filter
-        filter_complex = (
-            f"[0:v]loop=loop=-1:size=1000:start=0,"
-            f"trim=duration={duration},"
-            f"setpts=PTS-STARTPTS,"
-            f"scale={width}:{height}:force_original_aspect_ratio=increase,"
-            f"crop={width}:{height}[outv]"
-        )
+        # No overlays - just rename base to outv
+        filter_complex = base_filter.replace("[base]", "[outv]")
 
     cmd.extend([
         "-filter_complex", filter_complex,
         "-map", "[outv]",
-        "-map", "1:a",
+        "-map", f"{audio_input_idx}:a",
         "-c:v", "libx264",
         "-preset", "medium",
         "-b:v", bitrate,
