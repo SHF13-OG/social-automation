@@ -8,10 +8,10 @@ from typing import Any
 
 from src.db import now_utc
 
-# Target word-count range for ~15-30s at 140 WPM
-MIN_WORDS = 35   # ~15s floor
-MAX_WORDS = 70   # ~30s ceiling
-TARGET_WORDS = 55  # sweet spot ≈24s
+# Target word-count range for ~35s at 140 WPM
+MIN_WORDS = 70   # ~30s floor
+MAX_WORDS = 95   # ~40s ceiling
+TARGET_WORDS = 82  # sweet spot ≈35s
 
 
 def _build_system_prompt(theme_name: str, tone: str) -> str:
