@@ -1,13 +1,14 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { getTodaysPrayer, getRecentPrayers, getVideoForPrayer } from '@/lib/db'
+import { ensureDb, getTodaysPrayer, getRecentPrayers, getVideoForPrayer } from '@/lib/db'
 import AudioPlayer from '@/components/AudioPlayer'
 import ShareButtons from '@/components/ShareButtons'
 import CopyPrayerButton from '@/components/CopyPrayerButton'
 
 export const dynamic = 'force-dynamic'
 
-export default function Home() {
+export default async function Home() {
+  await ensureDb()
   const prayer = getTodaysPrayer()
 
   if (!prayer) {

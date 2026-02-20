@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDb } from '@/lib/db'
+import { ensureDb, getDb } from '@/lib/db'
 import fs from 'fs'
 import path from 'path'
 
@@ -17,6 +17,7 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid prayer ID' }, { status: 400 })
     }
 
+    await ensureDb()
     const db = getDb()
     if (!db) {
       return NextResponse.json({ error: 'Database not available' }, { status: 500 })

@@ -20,6 +20,7 @@ describe('GET /api/audio/[id]', () => {
     }
 
     jest.mock('@/lib/db', () => ({
+      ensureDb: jest.fn().mockResolvedValue(null),
       getDb: () => mockDb,
     }))
     jest.mock('fs', () => ({
@@ -61,6 +62,7 @@ describe('GET /api/audio/[id]', () => {
     }
 
     jest.mock('@/lib/db', () => ({
+      ensureDb: jest.fn().mockResolvedValue(null),
       getDb: () => mockDb,
     }))
     jest.mock('fs', () => ({
@@ -102,6 +104,7 @@ describe('GET /api/audio/[id]', () => {
     }
 
     jest.mock('@/lib/db', () => ({
+      ensureDb: jest.fn().mockResolvedValue(null),
       getDb: () => mockDb,
     }))
     jest.mock('fs', () => ({
@@ -145,6 +148,7 @@ describe('GET /api/audio/[id]', () => {
     }
 
     jest.mock('@/lib/db', () => ({
+      ensureDb: jest.fn().mockResolvedValue(null),
       getDb: () => mockDb,
     }))
     jest.mock('fs', () => ({
@@ -191,6 +195,7 @@ describe('GET /api/audio/[id]', () => {
 
   it('returns 500 when database is not available', async () => {
     jest.mock('@/lib/db', () => ({
+      ensureDb: jest.fn().mockResolvedValue(null),
       getDb: () => null,
     }))
     jest.mock('fs', () => ({

@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { getPrayerByDate, getAvailableDates } from '@/lib/db'
+import { ensureDb, getPrayerByDate, getAvailableDates } from '@/lib/db'
 import AudioPlayer from '@/components/AudioPlayer'
 import ShareButtons from '@/components/ShareButtons'
 
@@ -19,6 +19,7 @@ export default async function PrayerArchivePage({ params }: Props) {
     notFound()
   }
 
+  await ensureDb()
   const prayer = getPrayerByDate(date)
 
   if (!prayer) {

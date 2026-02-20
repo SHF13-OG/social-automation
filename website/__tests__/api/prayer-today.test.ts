@@ -12,6 +12,7 @@
 const mockGetTodaysPrayer = jest.fn()
 
 jest.mock('@/lib/db', () => ({
+  ensureDb: jest.fn().mockResolvedValue(null),
   getTodaysPrayer: mockGetTodaysPrayer,
 }))
 
@@ -74,6 +75,7 @@ describe('GET /api/prayer/today', () => {
     // Reset module cache to get fresh import
     jest.resetModules()
     jest.mock('@/lib/db', () => ({
+      ensureDb: jest.fn().mockResolvedValue(null),
       getTodaysPrayer: () => undefined,
     }))
     jest.mock('next/server', () => ({
@@ -110,6 +112,7 @@ describe('GET /api/prayer/today', () => {
     }
 
     jest.mock('@/lib/db', () => ({
+      ensureDb: jest.fn().mockResolvedValue(null),
       getTodaysPrayer: () => mockPrayer,
     }))
     jest.mock('next/server', () => ({
@@ -134,6 +137,7 @@ describe('GET /api/prayer/today', () => {
     jest.resetModules()
 
     jest.mock('@/lib/db', () => ({
+      ensureDb: jest.fn().mockResolvedValue(null),
       getTodaysPrayer: () => {
         throw new Error('Database connection failed')
       },

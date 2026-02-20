@@ -1,10 +1,11 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { getRecentPrayers } from '@/lib/db'
+import { ensureDb, getRecentPrayers } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
-export default function PrayerArchivePage() {
+export default async function PrayerArchivePage() {
+  await ensureDb()
   const prayers = getRecentPrayers(100)
 
   // Group prayers by month
