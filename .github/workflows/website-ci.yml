@@ -14,7 +14,6 @@ on:
 
 permissions:
   contents: read
-  deployments: write
 
 defaults:
   run:
@@ -146,13 +145,10 @@ jobs:
           NEXTAUTH_URL: https://2ndhalffaith.com
 
       - name: Deploy to Cloudflare Pages (Preview)
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: 2ndhalffaith
-          directory: website/.deploy
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+        run: npm run deploy -- --commit-dirty=true
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-production:
     name: Deploy Production
@@ -178,19 +174,8 @@ jobs:
           NEXTAUTH_SECRET: ${{ secrets.NEXTAUTH_SECRET }}
           NEXTAUTH_URL: https://2ndhalffaith.com
 
-      - name: Prepare deploy directory
-        run: |
-          rm -rf .deploy
-          cp -r .open-next .deploy
-          cp .deploy/worker.js .deploy/_worker.js
-          cp -r .deploy/assets/* .deploy/
-
       - name: Deploy to Cloudflare Pages (Production)
-        uses: cloudflare/pages-action@v1
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: 2ndhalffaith
-          directory: website/.deploy
-          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+        run: npm run deploy -- --commit-dirty=true --branch=main
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
