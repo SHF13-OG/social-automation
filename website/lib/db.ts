@@ -1,5 +1,5 @@
 // Database connection utilities
-// Uses sql.js for SQLite in a Node.js environment
+// Uses sql.js for SQLite — loads from filesystem locally, fetches static asset on Cloudflare
 
 let db: any = null
 let initPromise: Promise<any> | null = null
@@ -11,18 +11,38 @@ async function initDb(): Promise<any> {
   initPromise = (async () => {
     try {
       const initSqlJs = (await import('sql.js')).default
-      const fs = await import('fs')
-      const path = await import('path')
-
       const SQL = await initSqlJs()
-      const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), '..', 'data', 'social.db')
 
-      // Try to load existing database
-      if (fs.existsSync(DB_PATH)) {
-        const buffer = fs.readFileSync(DB_PATH)
-        db = new SQL.Database(buffer)
+      // Try filesystem first (local development)
+      let dbBuffer: Buffer | Uint8Array | null = null
+      try {
+        const fs = await import('fs')
+        const path = await import('path')
+        const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), '..', 'data', 'social.db')
+        if (fs.existsSync(DB_PATH)) {
+          dbBuffer = fs.readFileSync(DB_PATH)
+        }
+      } catch {
+        // fs not available (Cloudflare Workers) — try fetch
+      }
+
+      // Fallback: fetch DB as a static asset (Cloudflare Pages)
+      if (!dbBuffer) {
+        try {
+          const origin = process.env.NEXTAUTH_URL || 'https://2ndhalffaith.com'
+          const res = await fetch(`${origin}/data/social.db`)
+          if (res.ok) {
+            const arrayBuffer = await res.arrayBuffer()
+            dbBuffer = new Uint8Array(arrayBuffer)
+          }
+        } catch {
+          // fetch failed too
+        }
+      }
+
+      if (dbBuffer) {
+        db = new SQL.Database(dbBuffer)
       } else {
-        // Create empty database if file doesn't exist
         db = new SQL.Database()
       }
     } catch (error) {

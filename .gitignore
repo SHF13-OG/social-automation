@@ -18,10 +18,11 @@ build/
 
 # Database
 *.sqlite3
-*.db
 *.db-shm
 *.db-wal
 data/*.csv
+# Track data/social.db but ignore other .db files
+!data/social.db
 
 # Logs
 logs/
@@ -58,6 +59,7 @@ website/.next/
 website/.open-next/
 website/node_modules/
 website/coverage/
+website/public/data/
 
 # OAuth demo utility
 tiktok_demo.py

@@ -138,6 +138,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Copy database for static serving
+        run: mkdir -p public/data && cp ../data/social.db public/data/social.db
+
       - name: Build for Cloudflare
         run: npm run build:cloudflare
         env:
@@ -167,6 +170,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Copy database for static serving
+        run: mkdir -p public/data && cp ../data/social.db public/data/social.db
 
       - name: Build for Cloudflare
         run: npm run build:cloudflare
