@@ -159,6 +159,23 @@ export function getRecentPrayers(limit: number = 30): PrayerData[] {
   }
 }
 
+// Helper to get video path for a prayer
+export function getVideoForPrayer(prayerId: number): string | null {
+  try {
+    const result = runQuerySingle<{ file_path: string }>(`
+      SELECT file_path
+      FROM generated_videos
+      WHERE prayer_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `, [prayerId])
+    return result?.file_path ?? null
+  } catch (error) {
+    console.error('Error getting video for prayer:', error)
+    return null
+  }
+}
+
 // Helper to get available prayer dates for navigation
 export function getAvailableDates(): string[] {
   try {

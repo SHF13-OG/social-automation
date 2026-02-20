@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
-import { getTodaysPrayer, getRecentPrayers } from '@/lib/db'
+import { getTodaysPrayer, getRecentPrayers, getVideoForPrayer } from '@/lib/db'
 import AudioPlayer from '@/components/AudioPlayer'
 import ShareButtons from '@/components/ShareButtons'
 import CopyPrayerButton from '@/components/CopyPrayerButton'
@@ -28,6 +28,9 @@ export default function Home() {
             </span>
           </div>
           <nav className="flex items-center gap-4">
+            <Link href="/" className="text-accent-beige hover:text-accent-beige transition-colors">
+              Today&apos;s Prayer
+            </Link>
             <Link href="/about" className="text-cream/70 hover:text-cream transition-colors">
               About
             </Link>
@@ -94,6 +97,8 @@ export default function Home() {
   // Filter out today's prayer to avoid duplication
   const olderPrayers = recentPrayers.filter(p => p.prayer_id !== prayer.prayer_id).slice(0, 6)
 
+  const videoPath = getVideoForPrayer(prayer.prayer_id)
+
   return (
     <main className="min-h-screen">
       {/* Header */}
@@ -111,6 +116,9 @@ export default function Home() {
           </span>
         </Link>
         <nav className="flex items-center gap-4">
+          <Link href="/" className="text-accent-beige hover:text-accent-beige transition-colors">
+            Today&apos;s Prayer
+          </Link>
           <Link href="/about" className="text-cream/70 hover:text-cream transition-colors">
             About
           </Link>
@@ -138,6 +146,21 @@ export default function Home() {
         <blockquote className="text-xl sm:text-2xl text-cream text-center italic mb-8 leading-relaxed">
           &ldquo;{prayer.verse_text}&rdquo;
         </blockquote>
+
+        {/* Video Player */}
+        {videoPath && (
+          <div className="mb-8 rounded-2xl overflow-hidden">
+            <video
+              controls
+              playsInline
+              preload="metadata"
+              className="w-full"
+              poster=""
+            >
+              <source src={`/api/video/${prayer.prayer_id}`} type="video/mp4" />
+            </video>
+          </div>
+        )}
 
         {/* Divider */}
         <div className="flex items-center justify-center mb-8">
