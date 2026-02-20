@@ -5,10 +5,16 @@ on:
     branches: [main]
     paths:
       - 'website/**'
+      - '.github/workflows/website-ci.yml'
   pull_request:
     branches: [main]
     paths:
       - 'website/**'
+      - '.github/workflows/website-ci.yml'
+
+permissions:
+  contents: read
+  deployments: write
 
 defaults:
   run:
