@@ -36,7 +36,7 @@ export async function GET() {
         info.db_created = true
 
         const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
-        info.tables = tables[0]?.values?.map((r: string[]) => r[0]) ?? []
+        info.tables = tables[0]?.values?.map((r: unknown[]) => r[0]) ?? []
 
         const count = db.exec("SELECT COUNT(*) FROM prayers")
         info.prayer_count = count[0]?.values?.[0]?.[0] ?? 0
