@@ -139,11 +139,15 @@ jobs:
         run: npm ci
 
       - name: Bundle database into worker
-        run: |
-          echo "// Auto-generated — do not edit" > lib/db-data.ts
-          echo -n "export const DB_BASE64 = '" >> lib/db-data.ts
-          base64 -w0 ../data/social.db >> lib/db-data.ts
-          echo "'" >> lib/db-data.ts
+        run: node -e "
+          const fs = require('fs');
+          const db = fs.readFileSync('../data/social.db');
+          const b64 = db.toString('base64');
+          fs.writeFileSync('lib/db-data.ts',
+            '// Auto-generated — do not edit\nexport const DB_BASE64: string = \'' + b64 + '\'\n'
+          );
+          console.log('Generated db-data.ts: ' + b64.length + ' chars base64 from ' + db.length + ' bytes DB');
+          "
 
       - name: Build for Cloudflare
         run: npm run build:cloudflare
@@ -176,11 +180,15 @@ jobs:
         run: npm ci
 
       - name: Bundle database into worker
-        run: |
-          echo "// Auto-generated — do not edit" > lib/db-data.ts
-          echo -n "export const DB_BASE64 = '" >> lib/db-data.ts
-          base64 -w0 ../data/social.db >> lib/db-data.ts
-          echo "'" >> lib/db-data.ts
+        run: node -e "
+          const fs = require('fs');
+          const db = fs.readFileSync('../data/social.db');
+          const b64 = db.toString('base64');
+          fs.writeFileSync('lib/db-data.ts',
+            '// Auto-generated — do not edit\nexport const DB_BASE64: string = \'' + b64 + '\'\n'
+          );
+          console.log('Generated db-data.ts: ' + b64.length + ' chars base64 from ' + db.length + ' bytes DB');
+          "
 
       - name: Build for Cloudflare
         run: npm run build:cloudflare
