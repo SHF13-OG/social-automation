@@ -1,7 +1,7 @@
 // Database connection utilities
 // Uses sql.js for SQLite — loads from filesystem locally, from embedded base64 on Cloudflare
 
-import { DB_BASE64, WASM_BASE64 } from './db-data'
+import { DB_BASE64 } from './db-data'
 
 function decodeBase64(b64: string): Uint8Array {
   const clean = b64.replace(/\s/g, '')
@@ -22,8 +22,6 @@ async function initDb(): Promise<any> {
 
   initPromise = (async () => {
     try {
-      const initSqlJs = (await import('sql.js')).default
-
       // Try filesystem first (local development)
       let dbBuffer: Buffer | Uint8Array | null = null
       let fsAvailable = false
@@ -39,12 +37,15 @@ async function initDb(): Promise<any> {
         // fs not available (Cloudflare Workers)
       }
 
-      // Initialize sql.js — provide WASM binary when fs is unavailable
+      // Initialize sql.js
+      // On Cloudflare Workers, WebAssembly.instantiate() from buffers is disallowed,
+      // so we use the asm.js build (pure JS, no WASM needed).
       let SQL
-      if (!fsAvailable && WASM_BASE64) {
-        const wasmBytes = decodeBase64(WASM_BASE64)
-        SQL = await initSqlJs({ wasmBinary: wasmBytes.buffer as ArrayBuffer })
+      if (fsAvailable) {
+        const initSqlJs = (await import('sql.js')).default
+        SQL = await initSqlJs()
       } else {
+        const initSqlJs = (await import('sql.js/dist/sql-asm.js')).default
         SQL = await initSqlJs()
       }
 
