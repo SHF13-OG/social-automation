@@ -1,7 +1,17 @@
 // Database connection utilities
 // Uses sql.js for SQLite — loads from filesystem locally, from embedded base64 on Cloudflare
 
-import { DB_BASE64 } from './db-data'
+import { DB_BASE64, WASM_BASE64 } from './db-data'
+
+function decodeBase64(b64: string): Uint8Array {
+  const clean = b64.replace(/\s/g, '')
+  const binary = atob(clean)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+  return bytes
+}
 
 let db: any = null
 let initPromise: Promise<any> | null = null
@@ -13,30 +23,34 @@ async function initDb(): Promise<any> {
   initPromise = (async () => {
     try {
       const initSqlJs = (await import('sql.js')).default
-      const SQL = await initSqlJs()
 
       // Try filesystem first (local development)
       let dbBuffer: Buffer | Uint8Array | null = null
+      let fsAvailable = false
       try {
         const fs = await import('fs')
         const path = await import('path')
         const DB_PATH = process.env.DB_PATH || path.join(process.cwd(), '..', 'data', 'social.db')
         if (fs.existsSync(DB_PATH)) {
           dbBuffer = fs.readFileSync(DB_PATH)
+          fsAvailable = true
         }
       } catch {
         // fs not available (Cloudflare Workers)
       }
 
+      // Initialize sql.js — provide WASM binary when fs is unavailable
+      let SQL
+      if (!fsAvailable && WASM_BASE64) {
+        const wasmBytes = decodeBase64(WASM_BASE64)
+        SQL = await initSqlJs({ wasmBinary: wasmBytes.buffer as ArrayBuffer })
+      } else {
+        SQL = await initSqlJs()
+      }
+
       // Fallback: decode embedded base64 DB (Cloudflare Pages)
       if (!dbBuffer && DB_BASE64) {
-        const clean = DB_BASE64.replace(/\s/g, '')
-        const binary = atob(clean)
-        const bytes = new Uint8Array(binary.length)
-        for (let i = 0; i < binary.length; i++) {
-          bytes[i] = binary.charCodeAt(i)
-        }
-        dbBuffer = bytes
+        dbBuffer = decodeBase64(DB_BASE64)
       }
 
       if (dbBuffer) {
