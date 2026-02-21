@@ -30,7 +30,8 @@ async function initDb(): Promise<any> {
 
       // Fallback: decode embedded base64 DB (Cloudflare Pages)
       if (!dbBuffer && DB_BASE64) {
-        const binary = atob(DB_BASE64)
+        const clean = DB_BASE64.replace(/\s/g, '')
+        const binary = atob(clean)
         const bytes = new Uint8Array(binary.length)
         for (let i = 0; i < binary.length; i++) {
           bytes[i] = binary.charCodeAt(i)

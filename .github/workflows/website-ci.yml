@@ -141,7 +141,9 @@ jobs:
       - name: Bundle database into worker
         run: |
           echo "// Auto-generated — do not edit" > lib/db-data.ts
-          echo "export const DB_BASE64 = \`$(base64 -i ../data/social.db)\`" >> lib/db-data.ts
+          echo -n "export const DB_BASE64 = '" >> lib/db-data.ts
+          base64 -w0 ../data/social.db >> lib/db-data.ts
+          echo "'" >> lib/db-data.ts
 
       - name: Build for Cloudflare
         run: npm run build:cloudflare
@@ -176,7 +178,9 @@ jobs:
       - name: Bundle database into worker
         run: |
           echo "// Auto-generated — do not edit" > lib/db-data.ts
-          echo "export const DB_BASE64 = \`$(base64 -i ../data/social.db)\`" >> lib/db-data.ts
+          echo -n "export const DB_BASE64 = '" >> lib/db-data.ts
+          base64 -w0 ../data/social.db >> lib/db-data.ts
+          echo "'" >> lib/db-data.ts
 
       - name: Build for Cloudflare
         run: npm run build:cloudflare
