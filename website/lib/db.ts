@@ -1,5 +1,7 @@
 // Database connection utilities
-// Uses sql.js for SQLite — loads from filesystem locally, fetches static asset on Cloudflare
+// Uses sql.js for SQLite — loads from filesystem locally, from embedded base64 on Cloudflare
+
+import { DB_BASE64 } from './db-data'
 
 let db: any = null
 let initPromise: Promise<any> | null = null
@@ -23,21 +25,17 @@ async function initDb(): Promise<any> {
           dbBuffer = fs.readFileSync(DB_PATH)
         }
       } catch {
-        // fs not available (Cloudflare Workers) — try fetch
+        // fs not available (Cloudflare Workers)
       }
 
-      // Fallback: fetch DB as a static asset (Cloudflare Pages)
-      if (!dbBuffer) {
-        try {
-          const origin = process.env.NEXTAUTH_URL || 'https://2ndhalffaith.com'
-          const res = await fetch(`${origin}/data/social.db`)
-          if (res.ok) {
-            const arrayBuffer = await res.arrayBuffer()
-            dbBuffer = new Uint8Array(arrayBuffer)
-          }
-        } catch {
-          // fetch failed too
+      // Fallback: decode embedded base64 DB (Cloudflare Pages)
+      if (!dbBuffer && DB_BASE64) {
+        const binary = atob(DB_BASE64)
+        const bytes = new Uint8Array(binary.length)
+        for (let i = 0; i < binary.length; i++) {
+          bytes[i] = binary.charCodeAt(i)
         }
+        dbBuffer = bytes
       }
 
       if (dbBuffer) {

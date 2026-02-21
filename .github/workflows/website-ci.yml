@@ -138,8 +138,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Copy database for static serving
-        run: mkdir -p public/data && cp ../data/social.db public/data/social.db
+      - name: Bundle database into worker
+        run: |
+          echo "// Auto-generated — do not edit" > lib/db-data.ts
+          echo "export const DB_BASE64 = \`$(base64 -i ../data/social.db)\`" >> lib/db-data.ts
 
       - name: Build for Cloudflare
         run: npm run build:cloudflare
@@ -171,8 +173,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Copy database for static serving
-        run: mkdir -p public/data && cp ../data/social.db public/data/social.db
+      - name: Bundle database into worker
+        run: |
+          echo "// Auto-generated — do not edit" > lib/db-data.ts
+          echo "export const DB_BASE64 = \`$(base64 -i ../data/social.db)\`" >> lib/db-data.ts
 
       - name: Build for Cloudflare
         run: npm run build:cloudflare
