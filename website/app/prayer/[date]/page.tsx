@@ -2,7 +2,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ensureDb, getPrayerByDate, getAvailableDates } from '@/lib/db'
-import AudioPlayer from '@/components/AudioPlayer'
 import ShareButtons from '@/components/ShareButtons'
 
 export const dynamic = 'force-dynamic'
@@ -123,16 +122,6 @@ export default async function PrayerArchivePage({ params }: Props) {
             {prayer.prayer_text}
           </p>
         </div>
-
-        {/* Audio Player */}
-        {prayer.audio_path && (
-          <div className="mb-8">
-            <AudioPlayer
-              src={`/api/audio/${prayer.prayer_id}`}
-              duration={prayer.duration_sec || undefined}
-            />
-          </div>
-        )}
 
         {/* Share Buttons */}
         <div className="flex justify-center mb-8">

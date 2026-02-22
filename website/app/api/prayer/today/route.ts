@@ -25,7 +25,6 @@ export async function GET() {
         name: prayer.theme_name,
         tone: prayer.tone,
       },
-      audio_url: prayer.audio_path ? `/api/audio/${prayer.prayer_id}` : null,
       duration_sec: prayer.duration_sec,
       date: prayer.created_at,
     })

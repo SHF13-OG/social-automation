@@ -1,7 +1,6 @@
 import Image from 'next/image'
 import Link from 'next/link'
 import { ensureDb, getTodaysPrayer, getRecentPrayers } from '@/lib/db'
-import AudioPlayer from '@/components/AudioPlayer'
 import ShareButtons from '@/components/ShareButtons'
 import CopyPrayerButton from '@/components/CopyPrayerButton'
 
@@ -92,6 +91,7 @@ export default async function Home() {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+    timeZone: 'America/Chicago',
   })
 
   const recentPrayers = getRecentPrayers(7)
@@ -127,7 +127,7 @@ export default async function Home() {
       {/* Main Content */}
       <div className="max-w-2xl mx-auto px-6 py-8">
         {/* Date */}
-        <p className="text-accent-beige/70 text-center mb-2">{today}</p>
+        <p className="text-accent-beige/70 text-center mb-2">{today} (CT)</p>
 
         {/* Theme Badge */}
         <div className="flex justify-center mb-6">
@@ -165,16 +165,6 @@ export default async function Home() {
         <div className="flex justify-end mb-8">
           <CopyPrayerButton prayerText={prayer.prayer_text} />
         </div>
-
-        {/* Audio Player */}
-        {prayer.audio_path && (
-          <div className="mb-8">
-            <AudioPlayer
-              src={`/api/audio/${prayer.prayer_id}`}
-              duration={prayer.duration_sec || undefined}
-            />
-          </div>
-        )}
 
         {/* Share Buttons */}
         <div className="flex justify-center mb-8">

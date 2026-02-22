@@ -63,7 +63,6 @@ describe('GET /api/prayer/today', () => {
         name: 'Peace',
         tone: 'calming',
       },
-      audio_url: '/api/audio/1',
       duration_sec: 120,
       date: '2024-01-15',
     })
@@ -95,7 +94,7 @@ describe('GET /api/prayer/today', () => {
     expect(data).toEqual({ error: 'No prayer found for today' })
   })
 
-  it('returns null audio_url when no audio path', async () => {
+  it('returns null duration_sec when no audio', async () => {
     jest.resetModules()
 
     const mockPrayer = {
@@ -129,7 +128,6 @@ describe('GET /api/prayer/today', () => {
     const data = await response.json()
 
     expect(response.status).toBe(200)
-    expect(data.audio_url).toBeNull()
     expect(data.duration_sec).toBeNull()
   })
 
