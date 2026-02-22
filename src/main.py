@@ -1183,8 +1183,19 @@ def generate_daily_cmd(
         f"[bold]Theme:[/bold] {chosen_theme['name']} ({chosen_theme['slug']})"
     )
 
-    # 2. Pick verse
-    verse = pick_verse(conn, chosen_theme["id"])
+    # 2. Pick verse (use lineup's verse_id if specified, otherwise LRU rotation)
+    verse = None
+    if from_lineup and row is not None and row["verse_id"]:
+        cur = conn.execute(
+            "SELECT id, reference, text, translation, tone, used_count, last_used_at "
+            "FROM bible_verses WHERE id = ?",
+            (row["verse_id"],),
+        )
+        r = cur.fetchone()
+        if r:
+            verse = dict(r)
+    if verse is None:
+        verse = pick_verse(conn, chosen_theme["id"])
     if verse is None:
         conn.close()
         console.print(

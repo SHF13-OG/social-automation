@@ -108,7 +108,7 @@ function runQuerySingle<T>(sql: string, params: any[] = []): T | undefined {
   return results[0]
 }
 
-// Helper to get today's prayer
+// Helper to get today's prayer (only prayers with a generated video, one per day)
 export function getTodaysPrayer(): PrayerData | undefined {
   try {
     return runQuerySingle<PrayerData>(`
@@ -126,8 +126,10 @@ export function getTodaysPrayer(): PrayerData | undefined {
       FROM prayers p
       JOIN bible_verses bv ON p.verse_id = bv.id
       JOIN themes t ON p.theme_id = t.id
+      JOIN generated_videos gv ON gv.prayer_id = p.id
       LEFT JOIN audio_files af ON af.prayer_id = p.id
-      ORDER BY p.created_at DESC
+      GROUP BY date(gv.created_at)
+      ORDER BY gv.created_at DESC
       LIMIT 1
     `)
   } catch (error) {
@@ -136,7 +138,7 @@ export function getTodaysPrayer(): PrayerData | undefined {
   }
 }
 
-// Helper to get prayer by date
+// Helper to get prayer by date (only prayers with a generated video)
 export function getPrayerByDate(date: string): PrayerData | undefined {
   try {
     return runQuerySingle<PrayerData>(`
@@ -154,9 +156,10 @@ export function getPrayerByDate(date: string): PrayerData | undefined {
       FROM prayers p
       JOIN bible_verses bv ON p.verse_id = bv.id
       JOIN themes t ON p.theme_id = t.id
+      JOIN generated_videos gv ON gv.prayer_id = p.id
       LEFT JOIN audio_files af ON af.prayer_id = p.id
-      WHERE date(p.created_at) = ?
-      ORDER BY p.created_at DESC
+      WHERE date(gv.created_at) = ?
+      ORDER BY gv.created_at DESC
       LIMIT 1
     `, [date])
   } catch (error) {
@@ -165,7 +168,7 @@ export function getPrayerByDate(date: string): PrayerData | undefined {
   }
 }
 
-// Helper to get prayers for archive listing
+// Helper to get prayers for archive listing (only posted prayers, one per day)
 export function getRecentPrayers(limit: number = 30): PrayerData[] {
   try {
     return runQuery<PrayerData>(`
@@ -183,8 +186,10 @@ export function getRecentPrayers(limit: number = 30): PrayerData[] {
       FROM prayers p
       JOIN bible_verses bv ON p.verse_id = bv.id
       JOIN themes t ON p.theme_id = t.id
+      JOIN generated_videos gv ON gv.prayer_id = p.id
       LEFT JOIN audio_files af ON af.prayer_id = p.id
-      ORDER BY p.created_at DESC
+      GROUP BY date(gv.created_at)
+      ORDER BY gv.created_at DESC
       LIMIT ?
     `, [limit])
   } catch (error) {
@@ -210,12 +215,13 @@ export function getVideoForPrayer(prayerId: number): string | null {
   }
 }
 
-// Helper to get available prayer dates for navigation
+// Helper to get available prayer dates for navigation (only days with generated videos)
 export function getAvailableDates(): string[] {
   try {
     const results = runQuery<{ date: string }>(`
-      SELECT DISTINCT date(created_at) as date
-      FROM prayers
+      SELECT DISTINCT date(gv.created_at) as date
+      FROM generated_videos gv
+      JOIN prayers p ON gv.prayer_id = p.id
       ORDER BY date DESC
       LIMIT 365
     `)
