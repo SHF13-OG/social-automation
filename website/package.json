@@ -15,7 +15,7 @@
     "deploy": "rm -rf .deploy && cp -r .open-next .deploy && cp .deploy/worker.js .deploy/_worker.js && cp -r .deploy/assets/* .deploy/ && npx wrangler pages deploy .deploy --project-name=2ndhalffaith"
   },
   "dependencies": {
-    "@types/node": "^20.10.0",
+    "@types/node": "^25.3.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.16",
