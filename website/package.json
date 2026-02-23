@@ -33,7 +33,7 @@
     "typescript": "^5.3.0"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.16.3",
+    "@opennextjs/cloudflare": "^1.16.5",
     "@testing-library/jest-dom": "^6.1.0",
     "@testing-library/react": "^14.1.0",
     "@types/jest": "^30.0.0",
