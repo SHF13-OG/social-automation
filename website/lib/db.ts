@@ -175,7 +175,7 @@ export function getRecentPrayers(limit: number = 30): PrayerData[] {
       SELECT
         p.id as prayer_id,
         p.prayer_text,
-        p.created_at,
+        date(gv.created_at) as created_at,
         bv.reference as verse_ref,
         bv.text as verse_text,
         t.slug as theme_slug,
@@ -189,7 +189,7 @@ export function getRecentPrayers(limit: number = 30): PrayerData[] {
       JOIN generated_videos gv ON gv.prayer_id = p.id
       LEFT JOIN audio_files af ON af.prayer_id = p.id
       GROUP BY date(gv.created_at)
-      ORDER BY gv.created_at DESC
+      ORDER BY date(gv.created_at) DESC
       LIMIT ?
     `, [limit])
   } catch (error) {

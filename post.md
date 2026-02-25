@@ -58,12 +58,14 @@ If no:
 - Set `generated_videos.created_at` to the target post date
 
 ## 9. Website Update
-- Run `node scripts/bundle-db.js` to rebuild the bundled DB
+- Run `node website/scripts/bundle-db.js` from the project root to rebuild the bundled DB
 - Verify "Today's Prayer" query returns the correct verse/prayer
-- Deploy website
+- Commit the updated `website/lib/db-data.ts` and `data/social.db`
+- Push to `main` — Cloudflare Pages auto-deploys on push
+- Verify the live site at https://2ndhalffaith.com shows the new prayer
 
 ## 10. Deliver Final Output
 Provide to user:
 - Video file path
 - Ready-to-use TikTok caption (hook + verse + hashtags)
-- Confirmation that website is updated
+- Confirmation that website is deployed and live
