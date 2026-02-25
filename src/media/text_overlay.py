@@ -122,13 +122,11 @@ def generate_overlay_frames(
     OVERLAY_DIR.mkdir(parents=True, exist_ok=True)
 
     # Fonts
-    accent_font = _get_font(64, bold=True)
-    verse_font = _get_font(56, bold=True)
+    hook_font = _get_font(40, bold=False)
     prayer_font = _get_font(48, bold=True)
 
     # Colors
-    accent = "#E8D5B7"  # Warm beige for hook & CTA
-    verse_color = "#FFFFFF"  # Bright white for verse
+    accent = "#E8D5B7"  # Warm beige for hook
     prayer_color = "#FFD700"  # Bold yellow for spoken words
 
     # Layout constants
@@ -145,37 +143,16 @@ def generate_overlay_frames(
     total_words = sum(word_counts) or 1
 
     frames = []
-    cta_text = cta_override or THEME_CTAS.get(theme_slug, "Share your prayer in the comments")
 
     # Fixed layout positions
-    hook_y = height // 4
-    verse_y = (height // 4 + height // 2) // 2  # midpoint between hook and prayer
     prayer_y = height // 2
-    cta_y = 7 * height // 10
+    hook_y = 7 * height // 10
 
     # Generate frame for each prayer chunk
     cumulative_sec = 0.0
     for i, chunk_text in enumerate(prayer_chunks):
         img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
         draw = ImageDraw.Draw(img)
-
-        # --- Hook question centered at height // 3 ---
-        if hook_text:
-            y_cursor = hook_y
-            hook_lines = _wrap_text(hook_text, accent_font, max_text_width)
-            for line in hook_lines:
-                line_bbox = accent_font.getbbox(line)
-                line_width = line_bbox[2] - line_bbox[0]
-                line_x = (width - line_width) // 2
-                _draw_text_with_shadow(draw, (line_x, y_cursor), line, accent_font, fill=accent)
-                y_cursor += 78
-
-        # --- Verse reference (no box) centered between hook and prayer ---
-        if verse_ref:
-            ref_bbox = verse_font.getbbox(verse_ref)
-            ref_w = ref_bbox[2] - ref_bbox[0]
-            ref_x = (width - ref_w) // 2
-            _draw_text_with_shadow(draw, (ref_x, verse_y), verse_ref, verse_font, fill=verse_color)
 
         # --- Prayer text — 3 words centered ---
         chunk_bbox = prayer_font.getbbox(chunk_text)
@@ -186,15 +163,16 @@ def generate_overlay_frames(
             fill=prayer_color, shadow_offset=3,
         )
 
-        # --- CTA — fixed position above bottom safe zone ---
-        cur_cta_y = cta_y
-        cta_lines = _wrap_text(cta_text, accent_font, max_text_width)
-        for line in cta_lines:
-            line_bbox = accent_font.getbbox(line)
-            line_width = line_bbox[2] - line_bbox[0]
-            line_x = (width - line_width) // 2
-            _draw_text_with_shadow(draw, (line_x, cur_cta_y), line, accent_font, fill=accent)
-            cur_cta_y += 78
+        # --- Hook question at bottom (where CTA used to be) ---
+        if hook_text:
+            y_cursor = hook_y
+            hook_lines = _wrap_text(hook_text, hook_font, max_text_width)
+            for line in hook_lines:
+                line_bbox = hook_font.getbbox(line)
+                line_width = line_bbox[2] - line_bbox[0]
+                line_x = (width - line_width) // 2
+                _draw_text_with_shadow(draw, (line_x, y_cursor), line, hook_font, fill=accent)
+                y_cursor += 42
 
         # Save frame
         frame_path = OVERLAY_DIR / f"overlay_{i}.png"
@@ -236,13 +214,11 @@ def generate_single_overlay(
     OVERLAY_DIR.mkdir(parents=True, exist_ok=True)
 
     # Fonts
-    accent_font = _get_font(64, bold=True)
-    verse_font = _get_font(56, bold=True)
+    hook_font = _get_font(40, bold=False)
     prayer_font = _get_font(48, bold=True)
 
     # Colors
-    accent = "#E8D5B7"  # Warm beige for hook & CTA
-    verse_color = "#FFFFFF"  # Bright white for verse
+    accent = "#E8D5B7"  # Warm beige for hook
     prayer_color = "#FFD700"  # Bold yellow for spoken words
 
     # Layout constants
@@ -255,31 +231,11 @@ def generate_single_overlay(
     chunk_text = all_chunks[chunk_index] if chunk_index < len(all_chunks) else ""
 
     # Fixed layout positions
-    hook_y = height // 4
-    verse_y = (height // 4 + height // 2) // 2  # midpoint between hook and prayer
     prayer_y = height // 2
-    cta_y_pos = 7 * height // 10
+    hook_y = 7 * height // 10
 
     img = Image.new('RGBA', (width, height), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-
-    # --- Hook question centered at height // 3 ---
-    if hook_text:
-        y_cursor = hook_y
-        hook_lines = _wrap_text(hook_text, accent_font, max_text_width)
-        for line in hook_lines:
-            line_bbox = accent_font.getbbox(line)
-            line_width = line_bbox[2] - line_bbox[0]
-            line_x = (width - line_width) // 2
-            _draw_text_with_shadow(draw, (line_x, y_cursor), line, accent_font, fill=accent)
-            y_cursor += 78
-
-    # --- Verse reference (no box) centered between hook and prayer ---
-    if verse_ref:
-        ref_bbox = verse_font.getbbox(verse_ref)
-        ref_w = ref_bbox[2] - ref_bbox[0]
-        ref_x = (width - ref_w) // 2
-        _draw_text_with_shadow(draw, (ref_x, verse_y), verse_ref, verse_font, fill=verse_color)
 
     # --- Prayer text — 3 words centered ---
     if chunk_text:
@@ -291,16 +247,16 @@ def generate_single_overlay(
             fill=prayer_color, shadow_offset=3,
         )
 
-    # --- CTA — fixed position above bottom safe zone ---
-    cta_text = cta_override or THEME_CTAS.get(theme_slug, "Share your prayer in the comments")
-    cur_cta_y = cta_y_pos
-    cta_lines = _wrap_text(cta_text, accent_font, max_text_width)
-    for line in cta_lines:
-        line_bbox = accent_font.getbbox(line)
-        line_width = line_bbox[2] - line_bbox[0]
-        line_x = (width - line_width) // 2
-        _draw_text_with_shadow(draw, (line_x, cur_cta_y), line, accent_font, fill=accent)
-        cur_cta_y += 78
+    # --- Hook question at bottom (where CTA used to be) ---
+    if hook_text:
+        y_cursor = hook_y
+        hook_lines = _wrap_text(hook_text, hook_font, max_text_width)
+        for line in hook_lines:
+            line_bbox = hook_font.getbbox(line)
+            line_width = line_bbox[2] - line_bbox[0]
+            line_x = (width - line_width) // 2
+            _draw_text_with_shadow(draw, (line_x, y_cursor), line, hook_font, fill=accent)
+            y_cursor += 42
 
     frame_path = OVERLAY_DIR / f"overlay_{chunk_index}.png"
     img.save(frame_path, "PNG")

@@ -217,8 +217,8 @@ class TestGenerateOverlayFrames:
             # Check that the first frame has rendered content
             img = Image.open(frames[0]["file_path"])
             arr = np.array(img)
-            # Hook renders at y=height//4 which is 480; check 470-560 area
-            hook_area = arr[470:560, :, 3]
+            # Hook renders at y=7*height//10 which is 1344; check 1334-1420 area
+            hook_area = arr[1334:1420, :, 3]
             assert hook_area.max() > 0, "Hook text should render pixels in the hook area"
 
 
